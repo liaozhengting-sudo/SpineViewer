@@ -125,6 +125,10 @@ namespace SpineViewer.Resources
         public static string Str_FileSidebarAccessDenied => Get<string>("Str_FileSidebarAccessDenied");
         public static string Str_FileSidebarReadError => Get<string>("Str_FileSidebarReadError");
         public static string Str_NoSkeletonFound => Get<string>("Str_NoSkeletonFound");
+        public static string Str_LinkedAnimationNoShared => Get<string>("Str_LinkedAnimationNoShared");
+        public static string Str_LinkedAnimationApplied => Get<string>("Str_LinkedAnimationApplied");
+        public static string Str_LinkedAnimationSkipped => Get<string>("Str_LinkedAnimationSkipped");
+        public static string Str_LinkedAnimationNone => Get<string>("Str_LinkedAnimationNone");
         public static string Str_DeletePreviewsTitle => Get<string>("Str_DeletePreviewsTitle");
         public static string Str_DownloadGitHubAssetsTitle => Get<string>("Str_DownloadGitHubAssetsTitle");
 

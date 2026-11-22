@@ -545,6 +545,22 @@
 
                                         <!-- 动画属性页 -->
                                         <TabItem Header="{DynamicResource Str_Animation}">
+                                            <DockPanel>
+                                            <StackPanel DockPanel.Dock="Top" Margin="4,4,4,2">
+                                                <TextBlock Text="{DynamicResource Str_LinkedAnimation}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{DynamicResource Str_LinkedAnimationHint}"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,2,0,4"
+                                                           Opacity="0.85"
+                                                           ToolTip="{DynamicResource Str_LinkedAnimationTooltip}"/>
+                                                <ComboBox ItemsSource="{Binding LinkedAnimationNames}"
+                                                          SelectedItem="{Binding LinkedAnimationPick, Mode=TwoWay}"
+                                                          IsEnabled="{Binding CanLinkAnimations}"
+                                                          ToolTip="{DynamicResource Str_LinkedAnimationTooltip}"/>
+                                                <TextBlock Text="{Binding LinkedAnimationStatus}"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,4,0,0"/>
+                                            </StackPanel>
                                             <ListBox ItemsSource="{Binding AnimationTracks}" Grid.IsSharedSizeScope="True">
                                                 <ListBox.ContextMenu>
                                                     <ContextMenu>
@@ -608,6 +624,7 @@
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
+                                            </DockPanel>
                                         </TabItem>
 
                                         <!-- 调试属性页 -->

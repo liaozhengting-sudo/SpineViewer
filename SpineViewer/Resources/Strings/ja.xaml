@@ -100,6 +100,13 @@
     <s:String x:Key="Str_ClearSlotsAttachment">アタッチメントをクリア</s:String>
 
     <s:String x:Key="Str_Animation">アニメーション</s:String>
+    <s:String x:Key="Str_LinkedAnimation">同名アニメをまとめて切替</s:String>
+    <s:String x:Key="Str_LinkedAnimationTooltip">左で選択中のモデルだけを切り替えます。名前が完全一致するものだけを、各モデル自身のアニメとして設定します。無いモデルはスキップし、他のトラックは変えません。</s:String>
+    <s:String x:Key="Str_LinkedAnimationHint">左で Ctrl または Shift により一緒に再生するモデルを選び、ここで同名アニメを選びます。未選択のモデルは変わりません。似ているだけで違う名前は下のトラックで個別に選びます。</s:String>
+    <s:String x:Key="Str_LinkedAnimationNoShared">これらのモデルに完全一致するアニメ名はありません。</s:String>
+    <s:String x:Key="Str_LinkedAnimationApplied">{0} 個のモデルのトラック 0 を「{1}」に切り替えました。</s:String>
+    <s:String x:Key="Str_LinkedAnimationSkipped">このアニメが無い {0} 個をスキップしました：{1}。</s:String>
+    <s:String x:Key="Str_LinkedAnimationNone">アニメ「{0}」を持つモデルがないため、切り替えませんでした。</s:String>
     <s:String x:Key="Str_AppendTrack">追加</s:String>
     <s:String x:Key="Str_InsertTrack">挿入</s:String>
     <s:String x:Key="Str_ClearTrack">削除</s:String>

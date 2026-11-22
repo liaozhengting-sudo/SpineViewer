@@ -123,6 +123,54 @@ try
     failed |= Expect("Ctrl 点击不冻结选择", !Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(true, false, true));
     failed |= Expect("Shift 点击不冻结选择", !Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(false, true, true));
     failed |= Expect("点未选项不冻结选择", !Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(false, false, false));
+
+var shared = new[] { "click5_2", "click6", "click11_1", "click11_2", "click12_2", "idle3", "idle4" };
+var cinnabarA = shared.Concat(["only_a"]).ToArray();
+var cinnabarB = shared.ToArray();
+var cinnabarC = shared.Where(name => name != "click12_2").Append("only_c").ToArray();
+var names = Spine.Utils.LinkedAnimationSwitch.ExactSharedNames([cinnabarA, cinnabarB, cinnabarC]);
+failed |= Expect("三个模型的同名动画放在一起", names.Contains("click6") && names.Contains("idle3") && names.Contains("click11_1"));
+failed |= Expect("只存在于一个模型的名字不进联动", !names.Contains("only_a") && !names.Contains("only_c"));
+failed |= Expect("相近但不同的名字不会并成一个", names.Contains("click11_1") && names.Contains("click11_2") && !names.Contains("click11"));
+failed |= Expect("不是每个模型都有的名字仍可联动其余模型", names.Contains("click12_2"));
+failed |= Expect("大小写不同不算同一个动画", Spine.Utils.LinkedAnimationSwitch.ExactSharedNames([["Idle3"], ["idle3"]]).Length == 0);
+failed |= Expect("只选一个模型时没有联动项", Spine.Utils.LinkedAnimationSwitch.ExactSharedNames([shared]).Length == 0);
+failed |= Expect("名字相近但各自只有一个模型时不联动", Spine.Utils.LinkedAnimationSwitch.ExactSharedNames([["click11_1"], ["click11_2"]]).Length == 0);
+
+var selected = new Spine.Utils.LinkedAnimationSwitch.ModelAnimations[]
+{
+    new("10070_skin_Cinnabar03a", cinnabarA),
+    new("10070_skin_Cinnabar03b", cinnabarB),
+    new("10070_skin_Cinnabar03c", cinnabarC),
+};
+var calls = new List<(int index, int track, string animation)>();
+var applied = Spine.Utils.LinkedAnimationSwitch.Apply(selected, "click6", (index, track, animation) => calls.Add((index, track, animation)));
+failed |= Expect("同名动画只改轨道 0", applied.TrackIndex == Spine.Utils.LinkedAnimationSwitch.PrimaryTrack && calls.All(call => call.track == 0 && call.animation == "click6"));
+failed |= Expect("三个模型各自切一次，不复用同一次调用", calls.Count == 3 && calls.Select(call => call.index).Distinct().Count() == 3);
+failed |= Expect("切换 click6 没有跳过模型", applied.SkippedNames.Length == 0 && applied.AppliedNames.Length == 3);
+
+calls.Clear();
+var partial = Spine.Utils.LinkedAnimationSwitch.Apply(selected, "click12_2", (index, track, animation) => calls.Add((index, track, animation)));
+failed |= Expect("没有该动画的模型被跳过", calls.Count == 2 && !calls.Any(call => call.index == 2));
+failed |= Expect("跳过反馈点名缺少动画的模型", partial.SkippedNames.SequenceEqual(["10070_skin_Cinnabar03c"]));
+failed |= Expect("跳过时已切换的模型仍然点名", partial.AppliedNames.SequenceEqual(["10070_skin_Cinnabar03a", "10070_skin_Cinnabar03b"]));
+
+calls.Clear();
+var none = Spine.Utils.LinkedAnimationSwitch.Apply(selected, "not-a-real-animation", (index, track, animation) => calls.Add((index, track, animation)));
+failed |= Expect("谁都没有的动画不会切换", calls.Count == 0 && none.AppliedNames.Length == 0 && none.SkippedNames.Length == 3);
+
+calls.Clear();
+var onlyTwo = selected.Take(2).ToArray();
+var limited = Spine.Utils.LinkedAnimationSwitch.Apply(onlyTwo, "click6", (index, track, animation) => calls.Add((index, track, animation)));
+failed |= Expect("未传入的模型不会被切换", calls.Count == 2 && !limited.AppliedNames.Contains("10070_skin_Cinnabar03c") && !limited.SkippedNames.Contains("10070_skin_Cinnabar03c"));
+
+var tab = File.ReadAllText(FindUp("SpineViewer", "ViewModels", "Main", "SpineObjectTabViewModel.cs"));
+var applyAt = tab.IndexOf("private void ApplyLinkedAnimation", StringComparison.Ordinal);
+var applyBody = applyAt >= 0 ? tab.Substring(applyAt, Math.Min(900, tab.Length - applyAt)) : "";
+failed |= Expect("联动通过各模型自己的 SetAnimation 设置", applyBody.Contains("SetAnimation(track, animation)", StringComparison.Ordinal));
+failed |= Expect("联动切换不会清理轨道", !applyBody.Contains("ClearTrack", StringComparison.Ordinal));
+failed |= Expect("动画页保留原来的单模型轨道下拉", xaml.Contains("SelectedValue=\"{Binding AnimationName}\"", StringComparison.Ordinal));
+failed |= Expect("动画页有联动下拉", xaml.Contains("LinkedAnimationPick", StringComparison.Ordinal));
 }
 finally
 {
