@@ -209,7 +209,7 @@
     <s:String x:Key="Str_FileSidebarAccessDenied">Cannot read this folder (access denied): {0}. {1}</s:String>
     <s:String x:Key="Str_FileSidebarReadError">Cannot read this folder: {0}. {1}</s:String>
     <s:String x:Key="Str_NoSkeletonFound">No skeleton file this viewer can open was found in that folder.</s:String>
-    <s:String x:Key="Str_FolderDropHint">Drop a model folder here, or onto the model list, to load its skeletons. You do not need to open the folder and drag the json.</s:String>
+    <s:String x:Key="Str_FolderDropHint">Ctrl or Shift to select several folders and skeleton files, then drag them here or onto the model list. Double-click a folder to open it.</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">Clear Log</s:String>

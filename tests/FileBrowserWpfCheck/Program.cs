@@ -31,10 +31,11 @@ public static class Program
             return 1;
         }
 
-        var entries = new ObservableCollection<string> { "模型", "hero.skel" };
+        var entries = new ObservableCollection<string> { "模型", "甲", "乙", "hero.skel" };
         var list = new ListBox
         {
             ItemsSource = entries,
+            SelectionMode = SelectionMode.Extended,
             Width = 240,
             Height = 180,
             Background = region,
@@ -53,6 +54,18 @@ public static class Program
         window.UpdateLayout();
         list.UpdateLayout();
 
+        list.SelectedItems.Add(entries[0]);
+        list.SelectedItems.Add(entries[1]);
+        list.SelectedItems.Add(entries[2]);
+        var keep = list.SelectedItems.Contains(entries[1]);
+        if (list.SelectedItems.Count != 3 || !keep)
+        {
+            Console.Error.WriteLine($"multi-select count={list.SelectedItems.Count}");
+            window.Close();
+            app.Shutdown();
+            return 1;
+        }
+
         var generated = 0;
         for (var i = 0; i < entries.Count; i++)
         {
@@ -63,13 +76,13 @@ public static class Program
         window.Close();
         app.Shutdown();
 
-        if (list.Items.Count != 2 || generated != 2)
+        if (list.Items.Count != 4 || generated != 4)
         {
             Console.Error.WriteLine($"items={list.Items.Count} generated={generated}");
             return 1;
         }
 
-        Console.WriteLine("ok wpf list populated 2/2");
+        Console.WriteLine("ok wpf list populated 4/4 with 3 selected");
         return 0;
     }
 }

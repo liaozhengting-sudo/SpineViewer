@@ -103,6 +103,26 @@ try
     File.WriteAllText(direct, "x");
     var fromFile = Spine.Utils.SkeletonDirectoryListing.ResolveLoadPaths([direct]);
     failed |= Expect("直接拖入支持的文件仍会加载", fromFile.Count == 1);
+
+    var mixA = Path.Combine(formatRoot, "甲");
+    var mixB = Path.Combine(formatRoot, "乙");
+    Directory.CreateDirectory(mixA);
+    Directory.CreateDirectory(mixB);
+    File.WriteAllText(Path.Combine(mixA, "a.json"), "{}");
+    File.WriteAllText(Path.Combine(mixA, "a.atlas"), "atlas");
+    File.WriteAllText(Path.Combine(mixB, "b.skel"), "skel");
+    File.WriteAllText(Path.Combine(mixB, "b.skel.bytes"), "bytes");
+    var loose = Path.Combine(formatRoot, "loose.skel.bytes");
+    File.WriteAllText(loose, "bytes");
+    var mixed = Spine.Utils.SkeletonDirectoryListing.ResolveLoadPaths([mixA, mixB, loose, Path.Combine(mixA, "a.png")]);
+    failed |= Expect("混合拖入包含甲的 json", mixed.Any(p => p.EndsWith(Path.Combine("甲", "a.json"), StringComparison.OrdinalIgnoreCase)));
+    failed |= Expect("混合拖入乙只保留一个成对格式", mixed.Count(p => p.Contains($"{Path.DirectorySeparatorChar}乙{Path.DirectorySeparatorChar}")) == 1);
+    failed |= Expect("混合拖入包含单独的 skel.bytes", mixed.Any(p => p.EndsWith("loose.skel.bytes", StringComparison.OrdinalIgnoreCase)));
+    failed |= Expect("混合拖入不包含不存在的 png", !mixed.Any(p => p.EndsWith("a.png", StringComparison.OrdinalIgnoreCase)));
+    failed |= Expect("多选已选项时保留选择", Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(false, false, true));
+    failed |= Expect("Ctrl 点击不冻结选择", !Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(true, false, true));
+    failed |= Expect("Shift 点击不冻结选择", !Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(false, true, true));
+    failed |= Expect("点未选项不冻结选择", !Spine.Utils.SkeletonDirectoryListing.ShouldKeepExistingSelection(false, false, false));
 }
 finally
 {

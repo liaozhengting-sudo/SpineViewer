@@ -195,6 +195,12 @@ namespace Spine.Utils
             return best;
         }
 
+        /// <summary>
+        /// 点击已选中的项且没有 Ctrl/Shift 时，应先保住当前多选，方便把它们一起拖走。
+        /// </summary>
+        public static bool ShouldKeepExistingSelection(bool control, bool shift, bool clickedAlreadySelected)
+            => !control && !shift && clickedAlreadySelected;
+
         private static void TryAddFile(string file, List<Candidate> found)
         {
             var suffix = MatchSkeletonSuffix(file);

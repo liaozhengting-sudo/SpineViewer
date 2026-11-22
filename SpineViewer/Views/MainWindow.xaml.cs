@@ -2,6 +2,7 @@
 using Octokit;
 using SFMLRenderer;
 using Spine;
+using Spine.Utils;
 using SpineViewer.Extensions;
 using SpineViewer.Models;
 using SpineViewer.Natives;
@@ -45,6 +46,7 @@ public partial class MainWindow : Window
     private Point _fileBrowserDragStart;
     private FileBrowserEntry? _fileBrowserDragEntry;
     private bool _fileBrowserDragStarted;
+    private bool _fileBrowserHoldSelection;
     private GridLength _fileSidebarExpandedWidth = new(280);
     private bool _fileSidebarCollapsed;
     private Point _listViewDragSourcePoint;
@@ -743,9 +745,45 @@ public partial class MainWindow : Window
 
     private void FileBrowserList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        _fileBrowserDragStarted = false;
+        _fileBrowserHoldSelection = false;
         _fileBrowserDragStart = e.GetPosition(null);
+        var list = (ListBox)sender;
         var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
         _fileBrowserDragEntry = item?.DataContext as FileBrowserEntry;
+        if (_fileBrowserDragEntry is null)
+            return;
+
+        var modifiers = Keyboard.Modifiers;
+        var keep = SkeletonDirectoryListing.ShouldKeepExistingSelection(
+            (modifiers & ModifierKeys.Control) != 0,
+            (modifiers & ModifierKeys.Shift) != 0,
+            list.SelectedItems.Contains(_fileBrowserDragEntry));
+        if (!keep)
+            return;
+
+        // 已选中的项再按下时，先不要让 ListBox 把其它选择清掉，否则一拖就只剩当前项。
+        _fileBrowserHoldSelection = true;
+        e.Handled = true;
+    }
+
+    private void FileBrowserList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_fileBrowserDragStarted)
+        {
+            _fileBrowserDragStarted = false;
+            _fileBrowserHoldSelection = false;
+            _fileBrowserDragEntry = null;
+            return;
+        }
+
+        if (_fileBrowserHoldSelection && _fileBrowserDragEntry is not null)
+        {
+            _fileBrowserList.SelectedItems.Clear();
+            _fileBrowserList.SelectedItems.Add(_fileBrowserDragEntry);
+        }
+        _fileBrowserHoldSelection = false;
+        _fileBrowserDragEntry = null;
     }
 
     private void FileBrowserList_MouseMove(object sender, MouseEventArgs e)
