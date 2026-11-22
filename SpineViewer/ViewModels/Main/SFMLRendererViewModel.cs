@@ -846,7 +846,10 @@ namespace SpineViewer.ViewModels.Main
             // 先清成不透明深灰，保证帧缓冲 Alpha 为 255，预乘混合才和纯色背景一致。
             renderer.Clear(CheckerboardDark);
 
-            using var worldView = renderer.GetView();
+            // GetView 返回的是窗口内部视区的别名，不是副本。
+            // SetView 会改写这块内部数据，所以必须先复制，否则翻转、缩放和平移会在这一帧丢失。
+            using var liveView = renderer.GetView();
+            using var worldView = new SFML.Graphics.View(liveView);
             using var screenView = new SFML.Graphics.View(new SFML.Graphics.FloatRect(0, 0, resolution.X, resolution.Y));
             renderer.SetView(screenView);
             try
