@@ -208,6 +208,12 @@
     <s:String x:Key="Str_FileSidebarNotFound">パスが見つかりません：{0}</s:String>
     <s:String x:Key="Str_FileSidebarAccessDenied">このフォルダを読めません（権限不足）：{0}。{1}</s:String>
     <s:String x:Key="Str_FileSidebarReadError">このフォルダを読めません：{0}。{1}</s:String>
+    <s:String x:Key="Str_RecentOpened">前回開いたファイル</s:String>
+    <s:String x:Key="Str_RecentOpenedTooltip">読み込みに成功したモデルがここに残ります。ダブルクリックで再度読み込めます。起動時に全部は読み込みません。同じ名前はフォルダ名も表示します。</s:String>
+    <s:String x:Key="Str_RecentOpenedClear">記録を消す</s:String>
+    <s:String x:Key="Str_RecentOpenedClearTooltip">この記録だけを消します。ディスク上のファイルは消しません。</s:String>
+    <s:String x:Key="Str_RecentOpenedMissing">ファイルがありません：{0}</s:String>
+    <s:String x:Key="Str_RecentOpenedMark">開いた </s:String>
     <s:String x:Key="Str_NoSkeletonFound">このフォルダには開けるスケルトンがありません。</s:String>
     <s:String x:Key="Str_FolderDropHint">Ctrl または Shift でフォルダとスケルトンを複数選び、ここか左のモデル一覧へまとめてドラッグできます。フォルダのダブルクリックはフォルダを開きます。</s:String>
 

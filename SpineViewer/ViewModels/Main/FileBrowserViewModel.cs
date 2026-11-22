@@ -9,7 +9,7 @@ using System.Windows;
 
 namespace SpineViewer.ViewModels.Main
 {
-    public class FileBrowserEntry
+    public class FileBrowserEntry : ObservableObject
     {
         public FileBrowserEntry(string name, string fullPath, bool isDirectory)
         {
@@ -22,6 +22,29 @@ namespace SpineViewer.ViewModels.Main
         public string FullPath { get; }
         public bool IsDirectory { get; }
         public bool IsSpineFile => !IsDirectory;
+
+        public string OpenedMark
+        {
+            get => _openedMark;
+            set => SetProperty(ref _openedMark, value);
+        }
+        private string _openedMark = "";
+    }
+
+    public sealed class RecentOpenedFile
+    {
+        public RecentOpenedFile(string fullPath, string label, bool missing)
+        {
+            FullPath = fullPath;
+            Label = label;
+            Missing = missing;
+            Opacity = missing ? 0.55 : 1;
+        }
+
+        public string FullPath { get; }
+        public string Label { get; }
+        public bool Missing { get; }
+        public double Opacity { get; }
     }
 
     /// <summary>
@@ -38,6 +61,17 @@ namespace SpineViewer.ViewModels.Main
         }
 
         public ObservableCollection<FileBrowserEntry> Entries { get; } = [];
+        public ObservableCollection<RecentOpenedFile> RecentFiles { get; } = [];
+
+        public event EventHandler? RecentChanged;
+
+        private readonly object _recentLock = new();
+        private List<string> _recentPaths = [];
+
+        public IReadOnlyList<string> RecentPaths
+        {
+            get { lock (_recentLock) return _recentPaths.ToArray(); }
+        }
 
         public string? CurrentDirectory
         {
@@ -140,6 +174,70 @@ namespace SpineViewer.ViewModels.Main
             _vmMain.SpineObjectListViewModel.AddSpineObjectFromFileList(paths);
         }
 
+        public void ReplaceRecent(IEnumerable<string>? paths)
+        {
+            var next = RecentSkeletonHistory.Remember([], paths ?? []).ToList();
+            ApplyRecent(next, save: false);
+        }
+
+        public void RememberLoaded(string path)
+        {
+            if (!RecentSkeletonHistory.ShouldRemember(path))
+                return;
+            List<string> next;
+            lock (_recentLock)
+                next = RecentSkeletonHistory.Remember(_recentPaths, [path]).ToList();
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+                ApplyRecent(next, save: true);
+            else
+                dispatcher.BeginInvoke(new Action(() => ApplyRecent(next, save: true)));
+        }
+
+        public void ClearRecent()
+        {
+            ApplyRecent([], save: true);
+        }
+
+        public RelayCommand Cmd_ClearRecent => _cmd_ClearRecent ??= new(ClearRecent);
+        private RelayCommand? _cmd_ClearRecent;
+
+        public void LoadRecent(RecentOpenedFile file)
+        {
+            if (RecentSkeletonHistory.IsMissing(file.FullPath))
+            {
+                StatusText = string.Format(AppResource.Str_RecentOpenedMissing, file.FullPath);
+                ApplyRecent(RecentPaths.ToList(), save: false);
+                return;
+            }
+            _vmMain.SpineObjectListViewModel.AddSpineObjectFromFileList([file.FullPath]);
+        }
+
+        private void ApplyRecent(List<string> paths, bool save)
+        {
+            lock (_recentLock)
+                _recentPaths = paths;
+            RecentFiles.Clear();
+            foreach (var path in paths)
+            {
+                var missing = RecentSkeletonHistory.IsMissing(path);
+                RecentFiles.Add(new RecentOpenedFile(path, RecentSkeletonHistory.Label(path, paths), missing));
+            }
+            UpdateOpenedMarks();
+            if (save)
+                RecentChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void UpdateOpenedMarks()
+        {
+            HashSet<string> opened;
+            lock (_recentLock)
+                opened = new HashSet<string>(_recentPaths, StringComparer.OrdinalIgnoreCase);
+            var mark = AppResource.Str_RecentOpenedMark;
+            foreach (var entry in Entries)
+                entry.OpenedMark = !entry.IsDirectory && opened.Contains(entry.FullPath) ? mark : "";
+        }
+
         public void OpenDirectory(string path)
         {
             string fullPath;
@@ -184,6 +282,7 @@ namespace SpineViewer.ViewModels.Main
                 Entries.Add(new FileBrowserEntry(entry.Name, entry.FullPath, entry.IsDirectory));
             IsListing = false;
             StatusText = Describe(fullPath, listing);
+            UpdateOpenedMarks();
         }
 
         private static string Describe(string fullPath, SkeletonDirectoryListing listing)

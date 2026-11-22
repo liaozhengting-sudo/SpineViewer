@@ -1426,12 +1426,13 @@
                                                            Opacity="0.8"
                                                            Text="{DynamicResource Str_FolderDropHint}"
                                                            TextWrapping="Wrap"/>
-                                                <Grid Margin="8,4,8,0" ToolTip="{DynamicResource Str_PlaybackProgressTooltip}">
+                                                <Grid Margin="8,0,8,0" Height="16" ToolTip="{DynamicResource Str_PlaybackProgressTooltip}">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <Slider x:Name="_playbackSlider"
+                                                            Height="16"
                                                             Minimum="0"
                                                             Maximum="{Binding PlaybackSliderMaximum, Mode=OneWay}"
                                                             Value="{Binding PlaybackPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -1439,8 +1440,9 @@
                                                             IsMoveToPointEnabled="True"
                                                             VerticalAlignment="Center"/>
                                                     <TextBlock Grid.Column="1"
-                                                               Margin="8,0,0,0"
-                                                               MinWidth="72"
+                                                               Margin="6,0,0,0"
+                                                               MinWidth="68"
+                                                               FontSize="11"
                                                                VerticalAlignment="Center"
                                                                Text="{Binding PlaybackTimeText, Mode=OneWay}"/>
                                                 </Grid>
@@ -1557,6 +1559,24 @@
                                              KeyDown="FileSidebarPath_KeyDown"/>
                                 </DockPanel>
                                 <TextBlock DockPanel.Dock="Bottom" Margin="0,4,0,0" Opacity="0.75" Text="{Binding StatusText}" TextWrapping="Wrap"/>
+                                <DockPanel DockPanel.Dock="Top" Margin="0,4,0,2">
+                                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,2">
+                                        <Button DockPanel.Dock="Right" Padding="6,0" Content="{DynamicResource Str_RecentOpenedClear}" Command="{Binding Cmd_ClearRecent}" ToolTip="{DynamicResource Str_RecentOpenedClearTooltip}"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{DynamicResource Str_RecentOpened}" ToolTip="{DynamicResource Str_RecentOpenedTooltip}"/>
+                                    </DockPanel>
+                                    <ListBox x:Name="_recentFilesList"
+                                             ItemsSource="{Binding RecentFiles}"
+                                             MaxHeight="88"
+                                             BorderThickness="1"
+                                             ToolTip="{DynamicResource Str_RecentOpenedTooltip}"
+                                             MouseDoubleClick="RecentFiles_MouseDoubleClick">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Label}" ToolTip="{Binding FullPath}" Opacity="{Binding Opacity}"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </DockPanel>
                                 <!-- 不用 ListView：HandyControl 在 View 为空时会把整个控件换成空白占位，条目有了也看不见。 -->
                                 <ListBox x:Name="_fileBrowserList"
                                          ItemsSource="{Binding Entries}"
@@ -1574,7 +1594,10 @@
                                          KeyDown="FileBrowserList_KeyDown">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            <TextBlock VerticalAlignment="Center">
+                                                <Run Text="{Binding OpenedMark, Mode=OneWay}"/>
+                                                <Run Text="{Binding Name, Mode=OneWay}"/>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>

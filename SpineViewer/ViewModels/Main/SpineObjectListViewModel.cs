@@ -274,6 +274,7 @@ namespace SpineViewer.ViewModels.Main
                         RequestSelectionChanging?.Invoke(this, new(NotifyCollectionChangedAction.Add, sp));
                     });
                 }
+                _vmMain.FileBrowserViewModel.RememberLoaded(skelPath);
                 return true;
             }
             catch (Exception ex)
@@ -829,6 +830,7 @@ namespace SpineViewer.ViewModels.Main
                         RequestSelectionChanging?.Invoke(this, new(NotifyCollectionChangedAction.Add, sp));
                     });
                 }
+                _vmMain.FileBrowserViewModel.RememberLoaded(cfg.SkelPath);
                 return true;
             }
             catch (Exception ex)

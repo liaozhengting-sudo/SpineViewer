@@ -208,6 +208,12 @@
     <s:String x:Key="Str_FileSidebarNotFound">Path not found: {0}</s:String>
     <s:String x:Key="Str_FileSidebarAccessDenied">Cannot read this folder (access denied): {0}. {1}</s:String>
     <s:String x:Key="Str_FileSidebarReadError">Cannot read this folder: {0}. {1}</s:String>
+    <s:String x:Key="Str_RecentOpened">Opened before</s:String>
+    <s:String x:Key="Str_RecentOpenedTooltip">Models that loaded successfully are listed here. Double-click one to load it again. They are not loaded automatically at startup. Files with the same name also show their folder.</s:String>
+    <s:String x:Key="Str_RecentOpenedClear">Clear list</s:String>
+    <s:String x:Key="Str_RecentOpenedClearTooltip">Clears this list only. Files on disk are left alone.</s:String>
+    <s:String x:Key="Str_RecentOpenedMissing">File is gone: {0}</s:String>
+    <s:String x:Key="Str_RecentOpenedMark">opened </s:String>
     <s:String x:Key="Str_NoSkeletonFound">No skeleton file this viewer can open was found in that folder.</s:String>
     <s:String x:Key="Str_FolderDropHint">Ctrl or Shift to select several folders and skeleton files, then drag them here or onto the model list. Double-click a folder to open it.</s:String>
 

@@ -141,6 +141,42 @@ var pmaShader = shader.Substring(shader.IndexOf("FRAGMENT_VertexAlphaPma", Strin
 failed |= Expect("预乘着色器不再用纹理 Alpha 乘一次颜色", pmaShader.Contains("p.rgb *= gl_Color.a;", StringComparison.Ordinal) && !pmaShader.Contains("p.a *", StringComparison.Ordinal));
 failed |= Expect("关闭时渲染等待有超时", rendererForDefaults.Contains("Task.WaitAll", StringComparison.Ordinal) && rendererForDefaults.Contains("TimeSpan.FromSeconds(3)", StringComparison.Ordinal));
 failed |= Expect("视区复制仍在", rendererForDefaults.Contains("new SFML.Graphics.View(liveView)", StringComparison.Ordinal));
+failed |= Expect("播放进度条仍可拖动并双向绑定", xaml.Contains("x:Name=\"_playbackSlider\"", StringComparison.Ordinal) && xaml.Contains("PlaybackPosition, Mode=TwoWay", StringComparison.Ordinal) && xaml.Contains("IsMoveToPointEnabled=\"True\"", StringComparison.Ordinal) && xaml.Contains("IsEnabled=\"{Binding CanScrub}\"", StringComparison.Ordinal));
+failed |= Expect("播放进度条比原来更矮", xaml.Contains("<Slider x:Name=\"_playbackSlider\"", StringComparison.Ordinal) && xaml.Contains("Height=\"16\"", StringComparison.Ordinal));
+var windowCode = File.ReadAllText(FindUp("SpineViewer", "Views", "MainWindow.xaml.cs"));
+failed |= Expect("拖动进度条仍会暂停回写并在松开后结束", windowCode.Contains("BeginPlaybackScrub()", StringComparison.Ordinal) && windowCode.Contains("EndPlaybackScrub()", StringComparison.Ordinal));
+failed |= Expect("保存用户状态同时留下速度和最近打开", windowCode.Contains("Speed = _vm.SFMLRendererViewModel.Speed", StringComparison.Ordinal) && windowCode.Contains("RecentOpenedFiles = _vm.FileBrowserViewModel.RecentPaths.ToList()", StringComparison.Ordinal));
+var loadAt = windowCode.IndexOf("private void LoadUserState", StringComparison.Ordinal);
+var saveAt = windowCode.IndexOf("private void SaveUserState", StringComparison.Ordinal);
+var loadBody = loadAt >= 0 && saveAt > loadAt ? windowCode.Substring(loadAt, saveAt - loadAt) : "";
+failed |= Expect("启动时只恢复最近打开记录而不自动加载", loadBody.Contains("ReplaceRecent(m.RecentOpenedFiles)", StringComparison.Ordinal) && !loadBody.Contains("LoadRecent", StringComparison.Ordinal));
+
+var historyRoot = Path.Combine(Path.GetTempPath(), "sv-recent-" + Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(historyRoot);
+var kept = Path.Combine(historyRoot, "kept.skel");
+File.WriteAllText(kept, "skel");
+var first = Spine.Utils.RecentSkeletonHistory.Remember([], [Path.Combine(historyRoot, "a.json"), Path.Combine(historyRoot, "a.atlas"), Path.Combine(historyRoot, "a.png"), kept]);
+failed |= Expect("成功的骨骼会记入历史，atlas 和 png 不会", first.Count == 2 && first.Any(p => p.EndsWith("a.json", StringComparison.OrdinalIgnoreCase)) && first.Any(p => p.EndsWith("kept.skel", StringComparison.OrdinalIgnoreCase)) && !first.Any(p => p.EndsWith(".atlas", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".png", StringComparison.OrdinalIgnoreCase)));
+var again = Spine.Utils.RecentSkeletonHistory.Remember(first, [kept.ToUpperInvariant()]);
+failed |= Expect("同一路径只保留一条并排到最前", again.Count == 2 && again[0].Equals(Path.GetFullPath(kept), StringComparison.OrdinalIgnoreCase));
+IReadOnlyList<string> capped = [];
+for (var i = 0; i < 35; i++)
+    capped = Spine.Utils.RecentSkeletonHistory.Remember(capped, [Path.Combine(historyRoot, "n" + i + ".skel.bytes")]);
+failed |= Expect("历史有上限且最新的在前", capped.Count == Spine.Utils.RecentSkeletonHistory.DefaultCapacity && capped[0].EndsWith("n34.skel.bytes", StringComparison.OrdinalIgnoreCase));
+var cleared = Spine.Utils.RecentSkeletonHistory.Remember([], []);
+failed |= Expect("清空记录不会删除文件", cleared.Count == 0 && File.Exists(kept));
+failed |= Expect("丢失的路径只判定为缺失", Spine.Utils.RecentSkeletonHistory.IsMissing(Path.Combine(historyRoot, "gone.skel")) && !Spine.Utils.RecentSkeletonHistory.IsMissing(kept));
+var dupA = Path.Combine(historyRoot, "甲", "hero.skel");
+var dupB = Path.Combine(historyRoot, "乙", "hero.skel");
+var labels = Spine.Utils.RecentSkeletonHistory.Label(dupA, [dupA, dupB]);
+var other = Spine.Utils.RecentSkeletonHistory.Label(dupB, [dupA, dupB]);
+failed |= Expect("同名文件能看出不同文件夹", labels.Contains("甲") && other.Contains("乙") && labels != other);
+var oldState = """{ "Speed": 0.77, "FileBrowserDirectory": "D:\\\\models", "UseCheckerboardBackground": true }""";
+failed |= Expect("旧配置没有最近打开时得到空列表", Spine.Utils.RecentSkeletonHistory.ReadFromUserStateJson(oldState).Count == 0 && oldState.Contains("Speed", StringComparison.Ordinal));
+var withRecent = """{ "Speed": 1, "RecentOpenedFiles": [ "D:\\\\models\\\\hero.skel", "D:\\\\models\\\\b.json" ] }""";
+var readRecent = Spine.Utils.RecentSkeletonHistory.ReadFromUserStateJson(withRecent);
+failed |= Expect("最近打开能从配置里读回且不丢掉其它字段", readRecent.Count == 2 && readRecent[0].EndsWith("hero.skel", StringComparison.Ordinal) && withRecent.Contains("\"Speed\": 1", StringComparison.Ordinal));
+Directory.Delete(historyRoot, true);
 }
 finally
 {

@@ -37,6 +37,7 @@ namespace SpineViewer.Models
         public bool FileSidebarCollapsed { get; set; }
         public double FileSidebarWidth { get; set; } = 280;
         public string? FileBrowserDirectory { get; set; }
+        public List<string> RecentOpenedFiles { get; set; } = [];
 
         #endregion
 
