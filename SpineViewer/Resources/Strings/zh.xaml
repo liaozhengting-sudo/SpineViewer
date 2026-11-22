@@ -101,9 +101,9 @@
 
     <s:String x:Key="Str_Animation">动画</s:String>
     <s:String x:Key="Str_LinkedAnimation">联动切换动画</s:String>
-    <s:String x:Key="Str_LinkedAnimationTooltip">只切换左侧当前选中的模型。动画名必须完全一致，每个模型使用自己的动画。没有这个名字的模型会跳过，其它轨道保持不变。</s:String>
-    <s:String x:Key="Str_LinkedAnimationHint">在左侧用 Ctrl 或 Shift 选中要一起播放的模型，再在这里选一个同名动画。未选中的模型不会被切换。名字相近但不完全相同的，请在下面各轨道里单独选。</s:String>
-    <s:String x:Key="Str_LinkedAnimationNoShared">这些模型没有完全相同的动画名。</s:String>
+    <s:String x:Key="Str_LinkedAnimationTooltip">切换所有正在显示的模型。动画名必须完全一致，每个模型使用自己的动画。没有这个名字的会跳过，其它轨道保持不变。隐藏的模型不会被切换。</s:String>
+    <s:String x:Key="Str_LinkedAnimationHint">拖入后，正在显示的模型会自动列在这里，不用在左侧点选。隐藏的不参与。名字必须完全相同；相近但不相同的，请在下面各轨道里单独选。</s:String>
+    <s:String x:Key="Str_LinkedAnimationNoShared">当前显示的模型没有完全相同的动画名。</s:String>
     <s:String x:Key="Str_LinkedAnimationApplied">已将 {0} 个模型的轨道 0 切换为「{1}」。</s:String>
     <s:String x:Key="Str_LinkedAnimationSkipped">跳过 {0} 个没有该动画的模型：{1}。</s:String>
     <s:String x:Key="Str_LinkedAnimationNone">没有模型包含动画「{0}」，未做切换。</s:String>

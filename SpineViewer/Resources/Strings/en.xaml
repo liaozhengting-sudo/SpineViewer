@@ -101,9 +101,9 @@
 
     <s:String x:Key="Str_Animation">Animation</s:String>
     <s:String x:Key="Str_LinkedAnimation">Switch matching animations</s:String>
-    <s:String x:Key="Str_LinkedAnimationTooltip">Changes only the models selected on the left. Names must match exactly, and each model uses its own animation. Models without that name are skipped. Other tracks stay as they are.</s:String>
-    <s:String x:Key="Str_LinkedAnimationHint">Ctrl or Shift to select the models that should play together, then pick one shared animation here. Models you did not select are left alone. Similar but different names stay in the track list below.</s:String>
-    <s:String x:Key="Str_LinkedAnimationNoShared">These models have no animation name in common.</s:String>
+    <s:String x:Key="Str_LinkedAnimationTooltip">Switches every model that is currently shown. Names must match exactly, and each model uses its own animation. Models without that name are skipped. Other tracks stay as they are. Hidden models are not changed.</s:String>
+    <s:String x:Key="Str_LinkedAnimationHint">After you drop models in, the ones on screen are listed here automatically. You do not select them on the left. Hidden models stay out. Names must match exactly; similar names stay in the track list below.</s:String>
+    <s:String x:Key="Str_LinkedAnimationNoShared">The models on screen have no animation name in common.</s:String>
     <s:String x:Key="Str_LinkedAnimationApplied">Track 0 on {0} models is now "{1}".</s:String>
     <s:String x:Key="Str_LinkedAnimationSkipped">Skipped {0} models that do not have it: {1}.</s:String>
     <s:String x:Key="Str_LinkedAnimationNone">No selected model has "{0}". Nothing was changed.</s:String>

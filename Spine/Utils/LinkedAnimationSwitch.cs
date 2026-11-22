@@ -21,6 +21,17 @@ public static class LinkedAnimationSwitch
         string[] SkippedNames);
 
     /// <summary>
+    /// 只留下正在显示的模型。隐藏的既不列出，也不会被切换。
+    /// </summary>
+    public static ModelAnimations[] VisibleTargets(IReadOnlyList<(string Name, bool Shown, IReadOnlyList<string> Animations)> loaded)
+    {
+        return loaded
+            .Where(model => model.Shown)
+            .Select(model => new ModelAnimations(model.Name, model.Animations))
+            .ToArray();
+    }
+
+    /// <summary>
     /// 至少两个模型都有的动画名，区分大小写，保留第一次出现的顺序。
     /// 每个模型里的重复名字只计一次。
     /// </summary>

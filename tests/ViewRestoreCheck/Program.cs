@@ -164,6 +164,26 @@ var onlyTwo = selected.Take(2).ToArray();
 var limited = Spine.Utils.LinkedAnimationSwitch.Apply(onlyTwo, "click6", (index, track, animation) => calls.Add((index, track, animation)));
 failed |= Expect("未传入的模型不会被切换", calls.Count == 2 && !limited.AppliedNames.Contains("10070_skin_Cinnabar03c") && !limited.SkippedNames.Contains("10070_skin_Cinnabar03c"));
 
+var shown = Spine.Utils.LinkedAnimationSwitch.VisibleTargets(
+[
+    ("10070_skin_Cinnabar03a", true, new[] { "click6", "click12_2", "idle3", "click11_1" }),
+    ("10070_skin_Cinnabar03b", true, new[] { "click6", "idle3", "click11_2" }),
+    ("10070_skin_Cinnabar03c", false, new[] { "click6", "click12_2", "idle3", "secret" }),
+]);
+failed |= Expect("隐藏模型不进入自动联动", shown.Length == 2 && shown.All(model => model.Name != "10070_skin_Cinnabar03c"));
+var shownNames = Spine.Utils.LinkedAnimationSwitch.ExactSharedNames(shown.Select(model => model.Animations).ToArray());
+failed |= Expect("显示中的同名动画不用点选也会列出", shownNames.Contains("click6") && shownNames.Contains("idle3"));
+failed |= Expect("只和隐藏模型同名的动画不会列出", !shownNames.Contains("click12_2") && !shownNames.Contains("secret"));
+failed |= Expect("显示中的相近名字仍然分开", shownNames.Contains("click11_1") == false && shownNames.Contains("click11_2") == false);
+calls.Clear();
+var shownApply = Spine.Utils.LinkedAnimationSwitch.Apply(shown, "click6", (index, track, animation) => calls.Add((index, track, animation)));
+failed |= Expect(
+    "自动联动不切换隐藏模型",
+    calls.Count == 2
+    && calls.All(call => call.track == 0 && call.animation == "click6")
+    && !shownApply.AppliedNames.Contains("10070_skin_Cinnabar03c")
+    && !shownApply.SkippedNames.Contains("10070_skin_Cinnabar03c"));
+
 var tab = File.ReadAllText(FindUp("SpineViewer", "ViewModels", "Main", "SpineObjectTabViewModel.cs"));
 var applyAt = tab.IndexOf("private void ApplyLinkedAnimation", StringComparison.Ordinal);
 var applyBody = applyAt >= 0 ? tab.Substring(applyAt, Math.Min(900, tab.Length - applyAt)) : "";
@@ -171,6 +191,13 @@ failed |= Expect("联动通过各模型自己的 SetAnimation 设置", applyBody
 failed |= Expect("联动切换不会清理轨道", !applyBody.Contains("ClearTrack", StringComparison.Ordinal));
 failed |= Expect("动画页保留原来的单模型轨道下拉", xaml.Contains("SelectedValue=\"{Binding AnimationName}\"", StringComparison.Ordinal));
 failed |= Expect("动画页有联动下拉", xaml.Contains("LinkedAnimationPick", StringComparison.Ordinal));
+var selectedAt = tab.IndexOf("public SpineObjectModel[] SelectedObjects", StringComparison.Ordinal);
+var pickAt = tab.IndexOf("private string? _linkedAnimationPick", StringComparison.Ordinal);
+var selectedBody = selectedAt >= 0 && pickAt > selectedAt ? tab.Substring(selectedAt, pickAt - selectedAt) : "";
+failed |= Expect("点选模型不再重算联动", !selectedBody.Contains("RefreshLinkedAnimations", StringComparison.Ordinal));
+failed |= Expect("联动目标是正在显示的模型", applyBody.Contains("VisibleModels()", StringComparison.Ordinal) && tab.Contains("sp.IsShown", StringComparison.Ordinal));
+var zh = File.ReadAllText(FindUp("SpineViewer", "Resources", "Strings", "zh.xaml"));
+failed |= Expect("提示不再要求先点选模型", zh.Contains("不用在左侧点选", StringComparison.Ordinal) && !zh.Contains("在左侧用 Ctrl", StringComparison.Ordinal));
 }
 finally
 {
