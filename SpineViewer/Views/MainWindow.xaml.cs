@@ -234,6 +234,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
+        _logger.Info("Main window closing");
         if (!_vm.IsShuttingDownFromTray)
         {
             if (_vm.CloseToTray is true)

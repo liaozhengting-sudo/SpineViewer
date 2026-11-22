@@ -216,7 +216,7 @@ namespace SpineViewer.ViewModels.Main
             get => _speed;
             set => SetProperty(ref _speed, Math.Clamp(value, 0.01f, 100f));
         }
-        private float _speed = 1f;
+        private float _speed = 0.77f;
 
         public bool ShowAxis
         {
@@ -587,9 +587,19 @@ namespace SpineViewer.ViewModels.Main
         {
             IsUpdating = false;
             if (_cancelToken is null || _renderTask is null || _wallpaperRenderTask is null) return;
+            _logger.Info("Stopping render tasks");
             _cancelToken.Cancel();
-            _wallpaperRenderTask.Wait();
-            _renderTask.Wait();
+            // 渲染线程若卡在锁或原生调用里，无限等待会让关闭也停住。超时后继续关闭进程。
+            try
+            {
+                var stopped = Task.WaitAll([_wallpaperRenderTask, _renderTask], TimeSpan.FromSeconds(3));
+                if (!stopped)
+                    _logger.Warn("Render tasks were still running after 3 seconds; continue closing");
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn("Render tasks ended with an error while closing: {0}", ex.Message);
+            }
             _wallpaperRenderTask = null;
             _renderTask = null;
             _cancelToken = null;

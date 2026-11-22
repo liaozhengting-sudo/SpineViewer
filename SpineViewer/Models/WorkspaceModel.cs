@@ -34,7 +34,7 @@ namespace SpineViewer.Models
 
         public bool FlipY { get; set; } = true;
 
-        public float Speed { get; set; } = 1f;
+        public float Speed { get; set; } = 0.77f;
 
         public bool ShowAxis { get; set; } = true;
 

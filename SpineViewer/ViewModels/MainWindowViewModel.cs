@@ -26,7 +26,6 @@ namespace SpineViewer.ViewModels
 
         public MainWindowViewModel(ISFMLRenderer sfmlRenderer, ISFMLRenderer wallpaperRenderer)
         {
-            _spineObjectTabViewModel = new(_spineObjectModels);
             _sfmlRenderer = sfmlRenderer;
             _wallpaperRenderer = wallpaperRenderer;
             _spineObjectListViewModel = new(this);
@@ -124,7 +123,7 @@ namespace SpineViewer.ViewModels
         /// 模型属性页 ViewModel
         /// </summary>
         public SpineObjectTabViewModel SpineObjectTabViewModel => _spineObjectTabViewModel;
-        private readonly SpineObjectTabViewModel _spineObjectTabViewModel;
+        private readonly SpineObjectTabViewModel _spineObjectTabViewModel = new();
 
         /// <summary>
         /// 预览图管理 ViewModel

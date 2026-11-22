@@ -2,33 +2,20 @@
 using CommunityToolkit.Mvvm.Input;
 using Spine;
 using Spine.Interfaces;
-using Spine.Utils;
 using SpineViewer.Models;
-using SpineViewer.Resources;
-using SpineViewer.Utils;
 using System.Collections;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows;
 
 namespace SpineViewer.ViewModels.Main
 {
     public class SpineObjectTabViewModel : ObservableObject
     {
-        private readonly ObservableCollectionWithLock<SpineObjectModel> _loaded;
-        private readonly HashSet<SpineObjectModel> _watched = [];
         private SpineObjectModel[] _selectedObjects = [];
         private readonly ObservableCollection<SkinViewModel> _skins = [];
         private readonly ObservableCollection<SlotViewModel> _slots = [];
         private readonly ObservableCollection<AnimationTrackViewModel> _animationTracks = [];
-
-        public SpineObjectTabViewModel(ObservableCollectionWithLock<SpineObjectModel> loaded)
-        {
-            _loaded = loaded;
-            _loaded.CollectionChanged += (_, _) => ScheduleRefreshLinkedAnimations();
-            ScheduleRefreshLinkedAnimations();
-        }
 
         public SpineObjectModel[] SelectedObjects
         {
@@ -75,138 +62,6 @@ namespace SpineViewer.ViewModels.Main
 
                 OnPropertyChanged();
             }
-        }
-
-        private string? _linkedAnimationPick;
-        private string _linkedAnimationStatus = "";
-        private string[] _linkedAnimationNames = [];
-        private int _visibleCount;
-
-        /// <summary>
-        /// 当前已导入且正在显示的模型里，至少两个都有的动画名。
-        /// 隐藏的模型不在这里，也不随左侧点选变化。
-        /// </summary>
-        public IReadOnlyList<string> LinkedAnimationNames => _linkedAnimationNames;
-
-        public bool CanLinkAnimations => _visibleCount >= 2 && _linkedAnimationNames.Length > 0;
-
-        public string LinkedAnimationStatus => _linkedAnimationStatus;
-
-        public string? LinkedAnimationPick
-        {
-            get => _linkedAnimationPick;
-            set
-            {
-                if (string.IsNullOrEmpty(value))
-                {
-                    SetProperty(ref _linkedAnimationPick, null);
-                    return;
-                }
-                if (!CanLinkAnimations || !_linkedAnimationNames.Contains(value, StringComparer.Ordinal))
-                    return;
-
-                ApplyLinkedAnimation(value);
-                SetProperty(ref _linkedAnimationPick, value);
-            }
-        }
-
-        private void ScheduleRefreshLinkedAnimations()
-        {
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher is null || dispatcher.CheckAccess())
-            {
-                RefreshLinkedAnimations();
-                return;
-            }
-
-            // 模型可能在持有列表锁的后台线程加入。异步刷新，避免在锁内切回界面线程。
-            dispatcher.BeginInvoke(new Action(RefreshLinkedAnimations));
-        }
-
-        private void SyncWatched()
-        {
-            SpineObjectModel[] current;
-            lock (_loaded.Lock)
-                current = _loaded.ToArray();
-
-            foreach (var model in _watched.Except(current).ToArray())
-            {
-                model.PropertyChanged -= LoadedModel_PropertyChanged;
-                _watched.Remove(model);
-            }
-            foreach (var model in current)
-            {
-                if (_watched.Add(model))
-                    model.PropertyChanged += LoadedModel_PropertyChanged;
-            }
-        }
-
-        private void LoadedModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(SpineObjectModel.IsShown))
-                ScheduleRefreshLinkedAnimations();
-        }
-
-        private SpineObjectModel[] VisibleModels()
-        {
-            lock (_loaded.Lock)
-                return _loaded.Where(sp => sp.IsShown).ToArray();
-        }
-
-        private void RefreshLinkedAnimations()
-        {
-            SyncWatched();
-            var visible = VisibleModels();
-            _visibleCount = visible.Length;
-            _linkedAnimationPick = null;
-            _linkedAnimationNames = LinkedAnimationSwitch.ExactSharedNames(
-                visible.Select(sp => (IReadOnlyList<string>)sp.Animations).ToArray());
-            _linkedAnimationStatus = _visibleCount >= 2 && _linkedAnimationNames.Length == 0
-                ? AppResource.Str_LinkedAnimationNoShared
-                : "";
-            OnPropertyChanged(nameof(LinkedAnimationNames));
-            OnPropertyChanged(nameof(LinkedAnimationPick));
-            OnPropertyChanged(nameof(CanLinkAnimations));
-            OnPropertyChanged(nameof(LinkedAnimationStatus));
-        }
-
-        private void ApplyLinkedAnimation(string name)
-        {
-            var visible = VisibleModels();
-            var models = visible
-                .Select(sp => new LinkedAnimationSwitch.ModelAnimations(sp.Name, sp.Animations.ToArray()))
-                .ToArray();
-            var plan = LinkedAnimationSwitch.Apply(models, name, (index, track, animation) =>
-                visible[index].SetAnimation(track, animation));
-
-            if (_selectedObjects.Length > 0)
-                RebuildAnimationTracks();
-
-            if (plan.AppliedNames.Length == 0)
-                _linkedAnimationStatus = string.Format(AppResource.Str_LinkedAnimationNone, name);
-            else
-            {
-                _linkedAnimationStatus = string.Format(
-                    AppResource.Str_LinkedAnimationApplied,
-                    plan.AppliedNames.Length,
-                    name);
-                if (plan.SkippedNames.Length > 0)
-                {
-                    _linkedAnimationStatus += string.Format(
-                        AppResource.Str_LinkedAnimationSkipped,
-                        plan.SkippedNames.Length,
-                        JoinModelNames(plan.SkippedNames));
-                }
-            }
-            OnPropertyChanged(nameof(LinkedAnimationStatus));
-        }
-
-        private static string JoinModelNames(IReadOnlyList<string> names)
-        {
-            const int limit = 8;
-            if (names.Count <= limit)
-                return string.Join("、", names);
-            return string.Join("、", names.Take(limit)) + "…";
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)

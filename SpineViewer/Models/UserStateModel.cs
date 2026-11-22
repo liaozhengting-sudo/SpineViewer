@@ -44,7 +44,7 @@ namespace SpineViewer.Models
 
         public uint ResolutionX { get; set; } = 1500;
         public uint ResolutionY { get; set; } = 1000;
-        public float Speed { get; set; } = 1f;
+        public float Speed { get; set; } = 0.77f;
         public bool ShowAxis { get; set; } = true;
         public bool UseCheckerboardBackground { get; set; } = true;
         public Color BackgroundColor { get; set; } = Color.FromRgb(105, 105, 105);

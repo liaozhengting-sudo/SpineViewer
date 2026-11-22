@@ -669,7 +669,7 @@ namespace SpineViewer.Models
     public class SpineObjectLoadOptions
     {
         public bool IsShown { get; set; } = true;
-        public bool UsePma { get; set; }
+        public bool UsePma { get; set; } = true;
         public bool DebugTexture { get; set; } = true;
         public bool DebugBounds { get; set; }
         public bool DebugBones { get; set; }

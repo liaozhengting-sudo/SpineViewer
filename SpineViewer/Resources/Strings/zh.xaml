@@ -100,13 +100,6 @@
     <s:String x:Key="Str_ClearSlotsAttachment">清除附件</s:String>
 
     <s:String x:Key="Str_Animation">动画</s:String>
-    <s:String x:Key="Str_LinkedAnimation">联动切换动画</s:String>
-    <s:String x:Key="Str_LinkedAnimationTooltip">切换所有正在显示的模型。动画名必须完全一致，每个模型使用自己的动画。没有这个名字的会跳过，其它轨道保持不变。隐藏的模型不会被切换。</s:String>
-    <s:String x:Key="Str_LinkedAnimationHint">拖入后，正在显示的模型会自动列在这里，不用在左侧点选。隐藏的不参与。名字必须完全相同；相近但不相同的，请在下面各轨道里单独选。</s:String>
-    <s:String x:Key="Str_LinkedAnimationNoShared">当前显示的模型没有完全相同的动画名。</s:String>
-    <s:String x:Key="Str_LinkedAnimationApplied">已将 {0} 个模型的轨道 0 切换为「{1}」。</s:String>
-    <s:String x:Key="Str_LinkedAnimationSkipped">跳过 {0} 个没有该动画的模型：{1}。</s:String>
-    <s:String x:Key="Str_LinkedAnimationNone">没有模型包含动画「{0}」，未做切换。</s:String>
     <s:String x:Key="Str_AppendTrack">添加</s:String>
     <s:String x:Key="Str_InsertTrack">插入</s:String>
     <s:String x:Key="Str_ClearTrack">删除</s:String>
