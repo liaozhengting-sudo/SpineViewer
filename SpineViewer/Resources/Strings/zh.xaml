@@ -194,6 +194,13 @@
     <s:String x:Key="Str_ForwardFastTooltip">快进 10 帧</s:String>
     <s:String x:Key="Str_FullScreenTooltip">窗口/全屏; F11</s:String>
     <s:String x:Key="Str_ResetViewTooltip">重置视区位置与缩放; Ctrl+0</s:String>
+    <s:String x:Key="Str_FileSidebarTooltip">收起或展开文件栏。文件栏只浏览当前文件夹，不会盖住预览画面。</s:String>
+    <s:String x:Key="Str_FileSidebarOpen">打开</s:String>
+    <s:String x:Key="Str_FileSidebarOpenTooltip">选择要浏览的文件夹</s:String>
+    <s:String x:Key="Str_FileSidebarUp">上级</s:String>
+    <s:String x:Key="Str_FileSidebarRefresh">刷新</s:String>
+    <s:String x:Key="Str_FileSidebarLoad">加载</s:String>
+    <s:String x:Key="Str_FileSidebarLoadTooltip">加载选中的骨骼文件。双击文件也会加载。把文件拖到左侧模型列表即可加入预览。拖文件夹到本栏只是打开该文件夹。</s:String>
     
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">清除日志</s:String>

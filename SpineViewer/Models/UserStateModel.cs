@@ -34,6 +34,10 @@ namespace SpineViewer.Models
         public double RightPanelGridRow0Height { get; set; } = 100;
         public double RightPanelGridRow2Height { get; set; } = 100;
 
+        public bool FileSidebarCollapsed { get; set; }
+        public double FileSidebarWidth { get; set; } = 280;
+        public string? FileBrowserDirectory { get; set; }
+
         #endregion
 
         #region 预览画面状态

@@ -26,6 +26,21 @@ namespace Spine
         }.ToFrozenDictionary();
 
         /// <summary>
+        /// 是否是可加载的骨骼文件。不把 atlas、图片等伴随文件当成模型。
+        /// </summary>
+        public static bool IsPossibleSkeletonFile(string? path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+            foreach (var suffix in PossibleSuffixMapping.Keys)
+            {
+                if (path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// 日志器
         /// </summary>
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();

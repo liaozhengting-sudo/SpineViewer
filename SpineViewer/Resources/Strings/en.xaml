@@ -194,6 +194,13 @@
     <s:String x:Key="Str_ForwardFastTooltip">Forward 10 Frames</s:String>
     <s:String x:Key="Str_FullScreenTooltip">Window/Fullscreen; F11</s:String>
     <s:String x:Key="Str_ResetViewTooltip">Reset view to default position and zoom; Ctrl+0</s:String>
+    <s:String x:Key="Str_FileSidebarTooltip">Collapse or expand the file sidebar. It browses only the current folder and does not cover the preview.</s:String>
+    <s:String x:Key="Str_FileSidebarOpen">Open</s:String>
+    <s:String x:Key="Str_FileSidebarOpenTooltip">Choose a folder to browse</s:String>
+    <s:String x:Key="Str_FileSidebarUp">Up</s:String>
+    <s:String x:Key="Str_FileSidebarRefresh">Refresh</s:String>
+    <s:String x:Key="Str_FileSidebarLoad">Load</s:String>
+    <s:String x:Key="Str_FileSidebarLoadTooltip">Load the selected skeleton files. Double-click a file to load it. Drag files onto the model list to add them to the preview. Dropping a folder here only opens that folder.</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">Clear Log</s:String>

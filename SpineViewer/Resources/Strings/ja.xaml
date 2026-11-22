@@ -194,6 +194,13 @@
     <s:String x:Key="Str_ForwardFastTooltip">10フレーム進める</s:String>
     <s:String x:Key="Str_FullScreenTooltip">ウィンドウ/フルスクリーン; F11</s:String>
     <s:String x:Key="Str_ResetViewTooltip">表示位置とズームを初期状態に戻す; Ctrl+0</s:String>
+    <s:String x:Key="Str_FileSidebarTooltip">ファイル欄を折りたたむ／展開します。現在のフォルダだけを表示し、プレビューは隠しません。</s:String>
+    <s:String x:Key="Str_FileSidebarOpen">開く</s:String>
+    <s:String x:Key="Str_FileSidebarOpenTooltip">表示するフォルダを選択</s:String>
+    <s:String x:Key="Str_FileSidebarUp">上へ</s:String>
+    <s:String x:Key="Str_FileSidebarRefresh">更新</s:String>
+    <s:String x:Key="Str_FileSidebarLoad">読み込む</s:String>
+    <s:String x:Key="Str_FileSidebarLoadTooltip">選択したスケルトンを読み込みます。ファイルのダブルクリックでも読み込めます。ファイルを左のモデル一覧へドラッグするとプレビューに追加されます。フォルダをここにドロップしても、そのフォルダを開くだけです。</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">ログをクリア</s:String>

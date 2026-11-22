@@ -88,6 +88,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="2.5*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="280" MinWidth="28"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 功能页容器 -->
@@ -1410,7 +1412,10 @@
                                         </Border>
 
                                         <!-- 预览画面按钮组容器 -->
-                                        <Border Grid.Row="1" x:Name="_renderPanelButtonsContainer">
+                                        <Border Grid.Row="1" x:Name="_renderPanelButtonsContainer"
+                                                AllowDrop="True"
+                                                DragOver="PreviewChrome_DragOver"
+                                                Drop="PreviewChrome_Drop">
 
                                             <!-- 画面按钮 -->
                                             <StackPanel x:Name="_renderPanelButtonsPanel"
@@ -1513,6 +1518,66 @@
                                     </DockPanel>
                                 </Border>
                             </Border>
+                        </Grid>
+                    </Border>
+
+                    <GridSplitter x:Name="_fileSidebarSplitter" Grid.Column="3" ResizeDirection="Columns" Width="3"/>
+
+                    <Border Grid.Column="4" Background="{DynamicResource RegionBrush}"
+                            AllowDrop="True"
+                            DragEnter="FileSidebar_DragEnter"
+                            DragOver="FileSidebar_DragOver"
+                            Drop="FileSidebar_Drop">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Click="FileSidebarToggle_Click"
+                                    ToolTip="{DynamicResource Str_FileSidebarTooltip}"
+                                    VerticalAlignment="Stretch"
+                                    Padding="0">
+                                <TextBlock x:Name="_fileSidebarToggleGlyph" Text="»" HorizontalAlignment="Center"/>
+                            </Button>
+                            <DockPanel x:Name="_fileBrowserPanel" Grid.Column="1" Margin="4" DataContext="{Binding FileBrowserViewModel}">
+                                <ToolBar DockPanel.Dock="Top" ToolBarTray.IsLocked="True">
+                                    <Button Content="{DynamicResource Str_FileSidebarOpen}" Command="{Binding Cmd_OpenFolder}" ToolTip="{DynamicResource Str_FileSidebarOpenTooltip}"/>
+                                    <Button Content="{DynamicResource Str_FileSidebarUp}" Command="{Binding Cmd_Up}"/>
+                                    <Button Content="{DynamicResource Str_FileSidebarRefresh}" Command="{Binding Cmd_Refresh}"/>
+                                    <Button Content="{DynamicResource Str_FileSidebarLoad}" Click="FileSidebarLoad_Click" ToolTip="{DynamicResource Str_FileSidebarLoadTooltip}"/>
+                                </ToolBar>
+                                <TextBlock DockPanel.Dock="Top" Margin="0,4" Text="{Binding CurrentDirectory}" TextTrimming="CharacterEllipsis" ToolTip="{Binding CurrentDirectory}"/>
+                                <TextBlock DockPanel.Dock="Bottom" Margin="0,4,0,0" Opacity="0.7" Text="{Binding StatusText}" TextWrapping="Wrap"/>
+                                <ListView x:Name="_fileBrowserList"
+                                          Style="{StaticResource MyListViewBaseStyle}"
+                                          ItemsSource="{Binding Entries}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling"
+                                          MouseDoubleClick="FileBrowserList_MouseDoubleClick"
+                                          PreviewMouseLeftButtonDown="FileBrowserList_PreviewMouseLeftButtonDown"
+                                          MouseMove="FileBrowserList_MouseMove"
+                                          KeyDown="FileBrowserList_KeyDown">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Width="16" Height="16" Margin="0,0,6,0" Stretch="Uniform" Fill="{DynamicResource PrimaryTextBrush}">
+                                                    <Path.Style>
+                                                        <Style TargetType="Path">
+                                                            <Setter Property="Data" Value="{StaticResource Geo_File}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                                                    <Setter Property="Data" Value="{StaticResource Geo_Folder}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Path.Style>
+                                                </Path>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </DockPanel>
                         </Grid>
                     </Border>
                 </Grid>
