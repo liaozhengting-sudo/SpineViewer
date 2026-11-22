@@ -399,6 +399,54 @@ namespace SpineViewer.ViewModels.Main
         });
         private RelayCommand? _cmd_ResetView;
 
+        /// <summary>
+        /// 进度条只跟随轨道 0。更高轨道保持各自的时间。
+        /// </summary>
+        private const int PlaybackTrackIndex = 0;
+        private const float PlaybackEpsilon = 0.0005f;
+
+        private float _playbackPosition;
+        private float _playbackDuration;
+        private bool _canScrub;
+        private bool _suppressSeek;
+        private volatile bool _playbackScrubbing;
+        private bool _playbackPublishQueued;
+
+        public float PlaybackPosition
+        {
+            get => _playbackPosition;
+            set
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value)) return;
+                if (value < 0) value = 0;
+                if (_playbackDuration > 0 && value > _playbackDuration) value = _playbackDuration;
+                if (!SetProperty(ref _playbackPosition, value)) return;
+                OnPropertyChanged(nameof(PlaybackTimeText));
+                if (_suppressSeek || !_canScrub) return;
+                SeekShownTrack0(value);
+            }
+        }
+
+        public float PlaybackDuration => _playbackDuration;
+
+        /// <summary>
+        /// 滑块最大值。没有动画时保持 1，避免 Maximum 小于 Minimum。
+        /// </summary>
+        public float PlaybackSliderMaximum => _playbackDuration > PlaybackEpsilon ? _playbackDuration : 1f;
+
+        public bool CanScrub => _canScrub;
+
+        public string PlaybackTimeText => $"{_playbackPosition:0.00} / {(_canScrub ? _playbackDuration : 0f):0.00}";
+
+        public void BeginPlaybackScrub() => _playbackScrubbing = true;
+
+        public void EndPlaybackScrub()
+        {
+            if (!_playbackScrubbing) return;
+            if (_canScrub) SeekShownTrack0(_playbackPosition);
+            _playbackScrubbing = false;
+        }
+
         public void CanvasMouseWheelScrolled(object? s, SFML.Window.MouseWheelScrollEventArgs e)
         {
             float delta = (Keyboard.Modifiers & ModifierKeys.Shift) == 0 ? 0.1f : 0.01f;
@@ -595,8 +643,9 @@ namespace SpineViewer.ViewModels.Main
                 OnPropertyChanged(nameof(WallpaperRealTimeFps));
             }
 
-            // 停止更新的时候只是时间不前进, 但是坐标变换还是要更新, 否则无法移动对象
-            if (!_isUpdating) delta = 0;
+            // 停止更新的时候只是时间不前进, 但是坐标变换还是要更新, 否则无法移动对象。
+            // 拖动进度条时同样冻结时间，松手后从拖到的位置继续。
+            if (!_isUpdating || _playbackScrubbing) delta = 0;
 
             // 加上要快进的量
             lock (_forwardDeltaLock)
@@ -642,6 +691,8 @@ namespace SpineViewer.ViewModels.Main
                 }
             }
 
+            PublishPlaybackProgress();
+
             // 更新背景图位置和缩放
             lock (_bgLock)
             {
@@ -670,6 +721,111 @@ namespace SpineViewer.ViewModels.Main
                     bg.Scale = new(signX * scaleX, signY * scaleY);
                     bg.Position = view.Center;
                     bg.Rotation = view.Rotation;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 采样轨道 0 的播放位置。拖动滑块期间不回写，避免进度更新把滑块拽回去。
+        /// </summary>
+        private void PublishPlaybackProgress()
+        {
+            if (_playbackScrubbing) return;
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null) return;
+            if (dispatcher.CheckAccess())
+            {
+                var sample = ReadPrimaryTrack0();
+                ApplyPlaybackSample(sample.time, sample.duration);
+                return;
+            }
+            if (_playbackPublishQueued) return;
+            _playbackPublishQueued = true;
+            dispatcher.InvokeAsync(new Action(() =>
+            {
+                _playbackPublishQueued = false;
+                if (_playbackScrubbing) return;
+                var sample = ReadPrimaryTrack0();
+                ApplyPlaybackSample(sample.time, sample.duration);
+            }));
+        }
+
+        private void ApplyPlaybackSample(float time, float duration)
+        {
+            if (_playbackScrubbing) return;
+            var canScrub = duration > PlaybackEpsilon;
+            if (!canScrub)
+            {
+                time = 0;
+                duration = 0;
+            }
+            if (_canScrub == canScrub
+                && Math.Abs(_playbackDuration - duration) < PlaybackEpsilon
+                && Math.Abs(_playbackPosition - time) < PlaybackEpsilon)
+                return;
+
+            _suppressSeek = true;
+            try
+            {
+                if (SetProperty(ref _playbackDuration, duration, nameof(PlaybackDuration)))
+                {
+                    OnPropertyChanged(nameof(PlaybackSliderMaximum));
+                    OnPropertyChanged(nameof(PlaybackTimeText));
+                }
+                if (SetProperty(ref _canScrub, canScrub, nameof(CanScrub)))
+                    OnPropertyChanged(nameof(PlaybackTimeText));
+                if (SetProperty(ref _playbackPosition, time, nameof(PlaybackPosition)))
+                    OnPropertyChanged(nameof(PlaybackTimeText));
+            }
+            finally
+            {
+                _suppressSeek = false;
+            }
+        }
+
+        /// <summary>
+        /// 优先用选中且显示的模型，否则用第一个显示的模型。只看轨道 0。
+        /// </summary>
+        private (float time, float duration) ReadPrimaryTrack0()
+        {
+            lock (_models.Lock)
+            {
+                SpineObjectModel? primary = null;
+                foreach (var sp in _models)
+                {
+                    if (!sp.IsShown || !sp.IsSelected) continue;
+                    if (sp.TryGetTrackPlayback(PlaybackTrackIndex, out _, out _))
+                    {
+                        primary = sp;
+                        break;
+                    }
+                }
+                if (primary is null)
+                {
+                    foreach (var sp in _models)
+                    {
+                        if (!sp.IsShown) continue;
+                        if (sp.TryGetTrackPlayback(PlaybackTrackIndex, out _, out _))
+                        {
+                            primary = sp;
+                            break;
+                        }
+                    }
+                }
+                if (primary is null || !primary.TryGetTrackPlayback(PlaybackTrackIndex, out var time, out var duration))
+                    return (0, 0);
+                return (time, duration);
+            }
+        }
+
+        private void SeekShownTrack0(float time)
+        {
+            lock (_models.Lock)
+            {
+                foreach (var sp in _models)
+                {
+                    if (!sp.IsShown) continue;
+                    sp.SeekTrack(PlaybackTrackIndex, time);
                 }
             }
         }

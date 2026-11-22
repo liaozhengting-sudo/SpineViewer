@@ -110,6 +110,8 @@ public partial class MainWindow : Window
         User32.SetWindowLong(handle, User32.GWL_EXSTYLE, exStyle);
 
         DataContext = _vm = new(_renderPanel, _wallpaperRenderWindow);
+        _playbackSlider.AddHandler(Thumb.DragStartedEvent, new DragStartedEventHandler(PlaybackSlider_DragStarted));
+        _playbackSlider.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(PlaybackSlider_DragCompleted));
 
         // XXX: hc 的 NotifyIcon 的 Text 似乎没法双向绑定
         _notifyIcon.Text = _vm.Title;
@@ -418,6 +420,16 @@ public partial class MainWindow : Window
     #endregion
 
     #region ColorPicker 弹窗事件处理
+
+    private void PlaybackSlider_DragStarted(object sender, DragStartedEventArgs e)
+    {
+        _vm.SFMLRendererViewModel.BeginPlaybackScrub();
+    }
+
+    private void PlaybackSlider_DragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        _vm.SFMLRendererViewModel.EndPlaybackScrub();
+    }
 
     private void ButtonPickColor_Click(object sender, RoutedEventArgs e)
     {

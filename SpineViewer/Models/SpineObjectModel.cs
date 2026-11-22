@@ -263,6 +263,64 @@ namespace SpineViewer.Models
             }
         }
 
+        /// <summary>
+        /// 读取轨道在当前动画内的位置。循环时对时长取模，没有该轨道时返回 false。
+        /// </summary>
+        public bool TryGetTrackPlayback(int index, out float time, out float duration)
+        {
+            lock (_lock)
+            {
+                var entry = _spineObject.AnimationState.GetCurrent(index);
+                if (entry?.Animation is null)
+                {
+                    time = 0;
+                    duration = 0;
+                    return false;
+                }
+
+                duration = Math.Max(0, entry.Animation.Duration);
+                if (duration <= 0.0001f)
+                {
+                    time = 0;
+                    return true;
+                }
+
+                var trackTime = entry.TrackTime;
+                if (entry.Loop)
+                {
+                    time = trackTime % duration;
+                    if (time < 0) time += duration;
+                }
+                else
+                {
+                    time = Math.Clamp(trackTime, 0, duration);
+                }
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// 把轨道跳到指定时间并立刻刷新姿势。不改变循环和播放状态。
+        /// </summary>
+        public void SeekTrack(int index, float time)
+        {
+            lock (_lock)
+            {
+                var entry = _spineObject.AnimationState.GetCurrent(index);
+                if (entry?.Animation is null) return;
+
+                var duration = entry.Animation.Duration;
+                if (float.IsNaN(time) || float.IsInfinity(time) || time < 0) time = 0;
+                if (duration <= 0.0001f)
+                    time = 0;
+                else if (!entry.Loop && time > duration)
+                    time = duration;
+
+                entry.TrackTime = time;
+                _spineObject.Update(0);
+            }
+        }
+
         public float GetTrackTimeScale(int index)
         {
             lock (_lock) return _spineObject.AnimationState.GetCurrent(index)?.TimeScale ?? 1;

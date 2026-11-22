@@ -189,6 +189,7 @@
     <s:String x:Key="Str_StopTooltip">Stop</s:String>
     <s:String x:Key="Str_RestartTooltip">Restart Playback</s:String>
     <s:String x:Key="Str_PlayPauseTooltip">Play/Pause</s:String>
+    <s:String x:Key="Str_PlaybackProgressTooltip">Track 0 playback position, current time / animation duration in seconds. Drag to seek, including while paused. Uses the selected visible model, or the first visible model. Seeking moves track 0 of every visible model and leaves other tracks unchanged. If playback is running, it continues from the new position after release.</s:String>
     <s:String x:Key="Str_ForwardStepTooltip">Forward 1 Frame</s:String>
     <s:String x:Key="Str_ForwardFastTooltip">Forward 10 Frames</s:String>
     <s:String x:Key="Str_FullScreenTooltip">Window/Fullscreen; F11</s:String>

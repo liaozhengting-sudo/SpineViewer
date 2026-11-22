@@ -189,6 +189,7 @@
     <s:String x:Key="Str_StopTooltip">停止</s:String>
     <s:String x:Key="Str_RestartTooltip">重头开始播放</s:String>
     <s:String x:Key="Str_PlayPauseTooltip">播放/暂停</s:String>
+    <s:String x:Key="Str_PlaybackProgressTooltip">轨道 0 的播放进度，显示当前时间 / 动画时长（秒）。可拖动跳转，暂停时也可以拖。有选中且正在显示的模型时以它为准，否则用第一个显示的模型。拖动会把所有显示中模型的轨道 0 跳到该时间，其它轨道不变。松开后若正在播放，会从该位置继续。</s:String>
     <s:String x:Key="Str_ForwardStepTooltip">快进 1 帧</s:String>
     <s:String x:Key="Str_ForwardFastTooltip">快进 10 帧</s:String>
     <s:String x:Key="Str_FullScreenTooltip">窗口/全屏; F11</s:String>

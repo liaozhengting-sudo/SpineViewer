@@ -1413,11 +1413,28 @@
                                         <Border Grid.Row="1" x:Name="_renderPanelButtonsContainer">
 
                                             <!-- 画面按钮 -->
-                                            <Border x:Name="_renderPanelButtonsPanel"
+                                            <StackPanel x:Name="_renderPanelButtonsPanel"
                                                     DataContext="{Binding SFMLRendererViewModel}"
-                                                    Grid.Row="1" 
                                                     Grid.IsSharedSizeScope="True"
                                                     Background="{DynamicResource RegionBrush}">
+                                                <Grid Margin="8,4,8,0" ToolTip="{DynamicResource Str_PlaybackProgressTooltip}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Slider x:Name="_playbackSlider"
+                                                            Minimum="0"
+                                                            Maximum="{Binding PlaybackSliderMaximum, Mode=OneWay}"
+                                                            Value="{Binding PlaybackPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            IsEnabled="{Binding CanScrub}"
+                                                            IsMoveToPointEnabled="True"
+                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1"
+                                                               Margin="8,0,0,0"
+                                                               MinWidth="72"
+                                                               VerticalAlignment="Center"
+                                                               Text="{Binding PlaybackTimeText, Mode=OneWay}"/>
+                                                </Grid>
                                                 <WrapPanel HorizontalAlignment="Center">
                                                     <WrapPanel.Resources>
                                                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ButtonDefault}">
@@ -1433,7 +1450,7 @@
                                                     <Button x:Name="_fullScreenButton" hc:IconElement.Geometry="{StaticResource Geo_ArrowsMaximize}" Click="ButtonFullScreen_Click" ToolTip="{DynamicResource Str_FullScreenTooltip}"/>
                                                     <Button hc:IconElement.Geometry="{StaticResource Geo_House}" Command="{Binding Cmd_ResetView}" ToolTip="{DynamicResource Str_ResetViewTooltip}"/>
                                                 </WrapPanel>
-                                            </Border>
+                                            </StackPanel>
                                         </Border>
                                     </Grid>
                                 </TabItem>

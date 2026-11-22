@@ -189,6 +189,7 @@
     <s:String x:Key="Str_StopTooltip">停止</s:String>
     <s:String x:Key="Str_RestartTooltip">最初から再生</s:String>
     <s:String x:Key="Str_PlayPauseTooltip">再生/一時停止</s:String>
+    <s:String x:Key="Str_PlaybackProgressTooltip">トラック 0 の再生位置です。現在時間 / アニメーション長さ（秒）。一時停止中もドラッグできます。選択中で表示されているモデル、なければ最初の表示モデルを基準にします。ドラッグすると表示中の全モデルのトラック 0 をその時刻へ移動し、他のトラックは変えません。再生中なら離した位置から続きます。</s:String>
     <s:String x:Key="Str_ForwardStepTooltip">1フレーム進める</s:String>
     <s:String x:Key="Str_ForwardFastTooltip">10フレーム進める</s:String>
     <s:String x:Key="Str_FullScreenTooltip">ウィンドウ/フルスクリーン; F11</s:String>
