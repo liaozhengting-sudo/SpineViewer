@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Spine;
+using Spine.Utils;
+using SpineViewer.Resources;
 using SpineViewer.Services;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -45,6 +46,16 @@ namespace SpineViewer.ViewModels.Main
         }
         private string? _currentDirectory;
 
+        /// <summary>
+        /// 地址栏文字。回车或「转到」后才按这个路径重新列出。
+        /// </summary>
+        public string PathInput
+        {
+            get => _pathInput;
+            set => SetProperty(ref _pathInput, value);
+        }
+        private string _pathInput = "";
+
         public string StatusText
         {
             get => _statusText;
@@ -83,6 +94,16 @@ namespace SpineViewer.ViewModels.Main
                 OpenDirectory(CurrentDirectory);
         });
         private RelayCommand? _cmd_Refresh;
+
+        public RelayCommand Cmd_Go => _cmd_Go ??= new(NavigateToInput);
+        private RelayCommand? _cmd_Go;
+
+        public void NavigateToInput()
+        {
+            if (string.IsNullOrWhiteSpace(PathInput))
+                return;
+            OpenDirectory(PathInput.Trim());
+        }
 
         /// <summary>
         /// 拖进侧边栏的文件或文件夹只切换浏览位置。
@@ -147,52 +168,43 @@ namespace SpineViewer.ViewModels.Main
 
             var generation = ++_listingGeneration;
             CurrentDirectory = fullPath;
+            PathInput = fullPath;
             IsListing = true;
             StatusText = fullPath;
 
             Task.Run(() =>
             {
-                var entries = new List<FileBrowserEntry>();
-                string? error = null;
-                try
-                {
-                    foreach (var dir in Directory.EnumerateDirectories(fullPath))
-                    {
-                        entries.Add(new FileBrowserEntry(Path.GetFileName(dir), dir, true));
-                    }
-                    foreach (var file in Directory.EnumerateFiles(fullPath))
-                    {
-                        if (SpineObject.IsPossibleSkeletonFile(file))
-                            entries.Add(new FileBrowserEntry(Path.GetFileName(file), file, false));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    error = ex.Message;
-                }
-
-                entries.Sort((a, b) =>
-                {
-                    var byKind = b.IsDirectory.CompareTo(a.IsDirectory);
-                    return byKind != 0 ? byKind : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-                });
-
+                var listing = SkeletonDirectoryListing.Read(fullPath);
                 var dispatcher = Application.Current?.Dispatcher;
                 if (dispatcher is null)
                     return;
-                dispatcher.InvokeAsync(new Action(() =>
-                {
-                    if (generation != _listingGeneration)
-                        return;
-                    Entries.Clear();
-                    foreach (var entry in entries)
-                        Entries.Add(entry);
-                    IsListing = false;
-                    var spineCount = entries.Count(e => e.IsSpineFile);
-                    var folderCount = entries.Count - spineCount;
-                    StatusText = error ?? $"{fullPath}    {folderCount} / {spineCount}";
-                }));
+                dispatcher.InvokeAsync(new Action(() => ApplyListing(generation, fullPath, listing)));
             });
+        }
+
+        private void ApplyListing(int generation, string fullPath, SkeletonDirectoryListing listing)
+        {
+            if (generation != _listingGeneration)
+                return;
+            Entries.Clear();
+            foreach (var entry in listing.Entries)
+                Entries.Add(new FileBrowserEntry(entry.Name, entry.FullPath, entry.IsDirectory));
+            IsListing = false;
+            StatusText = Describe(fullPath, listing);
+        }
+
+        private static string Describe(string fullPath, SkeletonDirectoryListing listing)
+        {
+            var summary = string.Format(AppResource.Str_FileSidebarStatus, listing.FolderCount, listing.SkeletonCount);
+            var detail = listing.Error switch
+            {
+                SkeletonDirectoryError.NotFound => string.Format(AppResource.Str_FileSidebarNotFound, listing.ErrorDetail ?? fullPath),
+                SkeletonDirectoryError.AccessDenied => string.Format(AppResource.Str_FileSidebarAccessDenied, fullPath, listing.ErrorDetail),
+                SkeletonDirectoryError.Failed => string.Format(AppResource.Str_FileSidebarReadError, fullPath, listing.ErrorDetail),
+                _ when listing.Entries.Count == 0 => AppResource.Str_FileSidebarEmpty,
+                _ => summary,
+            };
+            return listing.Error == SkeletonDirectoryError.None ? detail : detail + " " + summary;
         }
     }
 }

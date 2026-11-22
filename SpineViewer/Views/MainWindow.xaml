@@ -1546,37 +1546,32 @@
                                     <Button Content="{DynamicResource Str_FileSidebarRefresh}" Command="{Binding Cmd_Refresh}"/>
                                     <Button Content="{DynamicResource Str_FileSidebarLoad}" Click="FileSidebarLoad_Click" ToolTip="{DynamicResource Str_FileSidebarLoadTooltip}"/>
                                 </ToolBar>
-                                <TextBlock DockPanel.Dock="Top" Margin="0,4" Text="{Binding CurrentDirectory}" TextTrimming="CharacterEllipsis" ToolTip="{Binding CurrentDirectory}"/>
-                                <TextBlock DockPanel.Dock="Bottom" Margin="0,4,0,0" Opacity="0.7" Text="{Binding StatusText}" TextWrapping="Wrap"/>
-                                <ListView x:Name="_fileBrowserList"
-                                          Style="{StaticResource MyListViewBaseStyle}"
-                                          ItemsSource="{Binding Entries}"
-                                          VirtualizingPanel.IsVirtualizing="True"
-                                          VirtualizingPanel.VirtualizationMode="Recycling"
-                                          MouseDoubleClick="FileBrowserList_MouseDoubleClick"
-                                          PreviewMouseLeftButtonDown="FileBrowserList_PreviewMouseLeftButtonDown"
-                                          MouseMove="FileBrowserList_MouseMove"
-                                          KeyDown="FileBrowserList_KeyDown">
-                                    <ListView.ItemTemplate>
+                                <DockPanel DockPanel.Dock="Top" Margin="0,4">
+                                    <Button DockPanel.Dock="Right" Margin="4,0,0,0" Content="{DynamicResource Str_FileSidebarGo}" Command="{Binding Cmd_Go}" ToolTip="{DynamicResource Str_FileSidebarGoTooltip}"/>
+                                    <TextBox Text="{Binding PathInput, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="{DynamicResource Str_FileSidebarGoTooltip}"
+                                             KeyDown="FileSidebarPath_KeyDown"/>
+                                </DockPanel>
+                                <TextBlock DockPanel.Dock="Bottom" Margin="0,4,0,0" Opacity="0.75" Text="{Binding StatusText}" TextWrapping="Wrap"/>
+                                <!-- 不用 ListView：HandyControl 在 View 为空时会把整个控件换成空白占位，条目有了也看不见。 -->
+                                <ListBox x:Name="_fileBrowserList"
+                                         ItemsSource="{Binding Entries}"
+                                         BorderThickness="1"
+                                         HorizontalContentAlignment="Stretch"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.VirtualizationMode="Recycling"
+                                         MouseDoubleClick="FileBrowserList_MouseDoubleClick"
+                                         PreviewMouseLeftButtonDown="FileBrowserList_PreviewMouseLeftButtonDown"
+                                         MouseMove="FileBrowserList_MouseMove"
+                                         KeyDown="FileBrowserList_KeyDown">
+                                    <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Path Width="16" Height="16" Margin="0,0,6,0" Stretch="Uniform" Fill="{DynamicResource PrimaryTextBrush}">
-                                                    <Path.Style>
-                                                        <Style TargetType="Path">
-                                                            <Setter Property="Data" Value="{StaticResource Geo_File}"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsDirectory}" Value="True">
-                                                                    <Setter Property="Data" Value="{StaticResource Geo_Folder}"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Path.Style>
-                                                </Path>
-                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
                                         </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                             </DockPanel>
                         </Grid>
                     </Border>

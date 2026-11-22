@@ -201,6 +201,13 @@
     <s:String x:Key="Str_FileSidebarRefresh">刷新</s:String>
     <s:String x:Key="Str_FileSidebarLoad">加载</s:String>
     <s:String x:Key="Str_FileSidebarLoadTooltip">加载选中的骨骼文件。双击文件也会加载。把文件拖到左侧模型列表即可加入预览。拖文件夹到本栏只是打开该文件夹。</s:String>
+    <s:String x:Key="Str_FileSidebarGo">转到</s:String>
+    <s:String x:Key="Str_FileSidebarGoTooltip">按地址栏路径打开。也可以在地址栏按回车。</s:String>
+    <s:String x:Key="Str_FileSidebarStatus">子文件夹 {0} 个，骨骼文件 {1} 个。atlas 和图片不列出。</s:String>
+    <s:String x:Key="Str_FileSidebarEmpty">这里没有子文件夹，也没有 skel、skel.bytes 或 json。atlas 和图片不会显示。</s:String>
+    <s:String x:Key="Str_FileSidebarNotFound">找不到这个路径：{0}</s:String>
+    <s:String x:Key="Str_FileSidebarAccessDenied">没有权限读取这个文件夹：{0}。{1}</s:String>
+    <s:String x:Key="Str_FileSidebarReadError">无法读取这个文件夹：{0}。{1}</s:String>
     
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">清除日志</s:String>

@@ -201,6 +201,13 @@
     <s:String x:Key="Str_FileSidebarRefresh">Refresh</s:String>
     <s:String x:Key="Str_FileSidebarLoad">Load</s:String>
     <s:String x:Key="Str_FileSidebarLoadTooltip">Load the selected skeleton files. Double-click a file to load it. Drag files onto the model list to add them to the preview. Dropping a folder here only opens that folder.</s:String>
+    <s:String x:Key="Str_FileSidebarGo">Go</s:String>
+    <s:String x:Key="Str_FileSidebarGoTooltip">Open the path in the address box. Enter does the same.</s:String>
+    <s:String x:Key="Str_FileSidebarStatus">{0} folders, {1} skeleton files. Atlas and image files are hidden.</s:String>
+    <s:String x:Key="Str_FileSidebarEmpty">No subfolders and no skel, skel.bytes, or json files. Atlas and image files are hidden.</s:String>
+    <s:String x:Key="Str_FileSidebarNotFound">Path not found: {0}</s:String>
+    <s:String x:Key="Str_FileSidebarAccessDenied">Cannot read this folder (access denied): {0}. {1}</s:String>
+    <s:String x:Key="Str_FileSidebarReadError">Cannot read this folder: {0}. {1}</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">Clear Log</s:String>

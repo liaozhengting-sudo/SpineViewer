@@ -201,6 +201,13 @@
     <s:String x:Key="Str_FileSidebarRefresh">更新</s:String>
     <s:String x:Key="Str_FileSidebarLoad">読み込む</s:String>
     <s:String x:Key="Str_FileSidebarLoadTooltip">選択したスケルトンを読み込みます。ファイルのダブルクリックでも読み込めます。ファイルを左のモデル一覧へドラッグするとプレビューに追加されます。フォルダをここにドロップしても、そのフォルダを開くだけです。</s:String>
+    <s:String x:Key="Str_FileSidebarGo">移動</s:String>
+    <s:String x:Key="Str_FileSidebarGoTooltip">アドレスのパスを開きます。Enter でも同じです。</s:String>
+    <s:String x:Key="Str_FileSidebarStatus">サブフォルダ {0}、スケルトン {1}。atlas と画像は表示しません。</s:String>
+    <s:String x:Key="Str_FileSidebarEmpty">サブフォルダも skel / skel.bytes / json もありません。atlas と画像は表示しません。</s:String>
+    <s:String x:Key="Str_FileSidebarNotFound">パスが見つかりません：{0}</s:String>
+    <s:String x:Key="Str_FileSidebarAccessDenied">このフォルダを読めません（権限不足）：{0}。{1}</s:String>
+    <s:String x:Key="Str_FileSidebarReadError">このフォルダを読めません：{0}。{1}</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">ログをクリア</s:String>

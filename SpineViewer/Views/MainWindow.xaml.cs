@@ -722,7 +722,7 @@ public partial class MainWindow : Window
 
     private void FileBrowserList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListViewItem>(true);
+        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
         if (item?.DataContext is not FileBrowserEntry entry)
             return;
         if (entry.IsDirectory)
@@ -731,10 +731,18 @@ public partial class MainWindow : Window
             _vm.SpineObjectListViewModel.AddSpineObjectFromFileList([entry.FullPath]);
     }
 
+    private void FileSidebarPath_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+        _vm.FileBrowserViewModel.NavigateToInput();
+        e.Handled = true;
+    }
+
     private void FileBrowserList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _fileBrowserDragStart = e.GetPosition(null);
-        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListViewItem>(true);
+        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
         _fileBrowserDragEntry = item?.DataContext as FileBrowserEntry;
     }
 
