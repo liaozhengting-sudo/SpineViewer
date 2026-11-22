@@ -76,6 +76,17 @@ namespace SpineViewer.ViewModels.Main
         private readonly object _bgLock = new();
 
         /// <summary>
+        /// 预览用棋盘格。只在预览渲染线程、当前 OpenGL 上下文里创建。
+        /// </summary>
+        private const uint CheckerboardCellSize = 16;
+        private static readonly SFML.Graphics.Color CheckerboardLight = new(204, 204, 204);
+        private static readonly SFML.Graphics.Color CheckerboardDark = new(153, 153, 153);
+        private SFML.Graphics.Texture? _checkerboardTexture; // XXX: 暂时未使用 Dispose 释放
+        private SFML.Graphics.Sprite? _checkerboardSprite; // XXX: 暂时未使用 Dispose 释放
+        private bool _checkerboardInitFailed;
+        private SFML.Graphics.Color _appliedAxisVertexColor = SFML.Graphics.Color.White;
+
+        /// <summary>
         /// 用于导出时可选包含背景, 不可长期持有或释放该对象
         /// </summary>
         internal SFML.Graphics.Sprite? BackgroundImageSprite { get => _backgroundImageSprite; }
@@ -213,6 +224,17 @@ namespace SpineViewer.ViewModels.Main
             set => SetProperty(ref _showAxis, value);
         }
         private bool _showAxis = true;
+
+        /// <summary>
+        /// 预览画面和模型预览图用棋盘格表示透明。关闭后预览画面回到纯色。
+        /// 不作用于导出，也不作用于桌面投影。
+        /// </summary>
+        public bool UseCheckerboardBackground
+        {
+            get => _useCheckerboardBackground;
+            set => SetProperty(ref _useCheckerboardBackground, value);
+        }
+        private bool _useCheckerboardBackground = true;
 
         public Color BackgroundColor
         {
@@ -652,6 +674,95 @@ namespace SpineViewer.ViewModels.Main
             }
         }
 
+        /// <summary>
+        /// 在屏幕空间铺一层不透明棋盘格，并恢复世界视区。
+        /// 格子不随缩放、平移、旋转变化，用来表示预览里的透明区域。
+        /// </summary>
+        private bool DrawCheckerboard(ISFMLRenderer renderer)
+        {
+            if (!EnsureCheckerboardSprite())
+                return false;
+
+            var resolution = renderer.Resolution;
+            if (resolution.X == 0 || resolution.Y == 0 || resolution.X > int.MaxValue || resolution.Y > int.MaxValue)
+                return false;
+
+            // 先清成不透明深灰，保证帧缓冲 Alpha 为 255，预乘混合才和纯色背景一致。
+            renderer.Clear(CheckerboardDark);
+
+            using var worldView = renderer.GetView();
+            using var screenView = new SFML.Graphics.View(new SFML.Graphics.FloatRect(0, 0, resolution.X, resolution.Y));
+            renderer.SetView(screenView);
+            try
+            {
+                _checkerboardSprite!.TextureRect = new SFML.Graphics.IntRect(0, 0, (int)resolution.X, (int)resolution.Y);
+                renderer.Draw(_checkerboardSprite);
+                return true;
+            }
+            finally
+            {
+                renderer.SetView(worldView);
+            }
+        }
+
+        private bool EnsureCheckerboardSprite()
+        {
+            if (_checkerboardSprite is not null)
+                return true;
+            if (_checkerboardInitFailed)
+                return false;
+
+            try
+            {
+                const uint size = CheckerboardCellSize * 2;
+                using var image = new SFML.Graphics.Image(size, size, CheckerboardDark);
+                for (uint y = 0; y < size; y++)
+                {
+                    for (uint x = 0; x < size; x++)
+                    {
+                        var cellX = x / CheckerboardCellSize;
+                        var cellY = y / CheckerboardCellSize;
+                        if (((cellX + cellY) & 1) == 0)
+                            image.SetPixel(x, y, CheckerboardLight);
+                    }
+                }
+
+                _checkerboardTexture = new SFML.Graphics.Texture(image, false)
+                {
+                    Repeated = true,
+                    Smooth = false,
+                };
+                _checkerboardSprite = new SFML.Graphics.Sprite(_checkerboardTexture);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _checkerboardInitFailed = true;
+                _logger.Debug(ex.ToString());
+                _logger.Error("Failed to create checkerboard background, {0}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 棋盘格较亮，坐标轴改用黑色。关闭棋盘格时恢复原来的白色坐标轴。
+        /// </summary>
+        private void SyncAxisVertexColor()
+        {
+            var color = _useCheckerboardBackground ? SFML.Graphics.Color.Black : SFML.Graphics.Color.White;
+            if (color.R == _appliedAxisVertexColor.R
+                && color.G == _appliedAxisVertexColor.G
+                && color.B == _appliedAxisVertexColor.B
+                && color.A == _appliedAxisVertexColor.A)
+                return;
+
+            _appliedAxisVertexColor = color;
+            _axisVertices[0] = new(new(-1e9f, 0), color);
+            _axisVertices[1] = new(new(1e9f, 0), color);
+            _axisVertices[2] = new(new(0, -1e9f), color);
+            _axisVertices[3] = new(new(0, 1e9f), color);
+        }
+
         private void UpdateRenderFrame()
         {
             if (!_vmMain.IsVisible)
@@ -661,8 +772,12 @@ namespace SpineViewer.ViewModels.Main
                 return;
             }
 
-            // 清除背景
-            _renderer.Clear(_backgroundColor);
+            // 预览背景。棋盘格是不透明像素，模型仍按原有预乘混合叠上去。
+            // 画不上时退回纯色，避免留下未清除的画面。
+            if (!_useCheckerboardBackground || !DrawCheckerboard(_renderer))
+                _renderer.Clear(_backgroundColor);
+
+            SyncAxisVertexColor();
 
             // 渲染背景
             lock (_bgLock)
@@ -809,6 +924,7 @@ namespace SpineViewer.ViewModels.Main
                     FlipY = FlipY,
                     Speed = Speed,
                     ShowAxis = ShowAxis,
+                    UseCheckerboardBackground = UseCheckerboardBackground,
                     BackgroundColor = BackgroundColor,
                     BackgroundImagePath = BackgroundImagePath,
                     BackgroundImageMode = BackgroundImageMode,
@@ -825,6 +941,7 @@ namespace SpineViewer.ViewModels.Main
                 FlipY = value.FlipY;
                 Speed = value.Speed;
                 ShowAxis = value.ShowAxis;
+                UseCheckerboardBackground = value.UseCheckerboardBackground;
                 BackgroundColor = value.BackgroundColor;
                 BackgroundImagePath = value.BackgroundImagePath;
                 BackgroundImageMode = value.BackgroundImageMode;

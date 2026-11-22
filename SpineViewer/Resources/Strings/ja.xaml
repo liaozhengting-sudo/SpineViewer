@@ -141,6 +141,8 @@
     <s:String x:Key="Str_LogHitSlots">ヒットテスト結果のスロット名を出力</s:String>
     <s:String x:Key="Str_LogHitSlotsTooltip">有効にすると、ログボックスに各クリック操作で命中したモデルとスロットの情報が出力されます。</s:String>
     <s:String x:Key="Str_ShowAxis">座標軸を表示</s:String>
+    <s:String x:Key="Str_CheckerboardBackground">市松模様の背景</s:String>
+    <s:String x:Key="Str_CheckerboardBackgroundTooltip">オンにすると、プレビュー画面とモデルプレビュー画像で透明部分を市松模様で表示します。オフにすると、プレビューは下の単色、プレビュー画像は暗い背景になります。背景画像は市松模様の上に描画されます。書き出しとデスクトップ壁紙は常に単色です。</s:String>
     <s:String x:Key="Str_BackgroundColor">背景色</s:String>
     <s:String x:Key="Str_BackgroundImagePath">背景画像のパス</s:String>
     <s:String x:Key="Str_BackgroundImageMode">背景画像のモード</s:String>

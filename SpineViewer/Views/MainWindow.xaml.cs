@@ -292,6 +292,7 @@ public partial class MainWindow : Window
             _vm.SFMLRendererViewModel.SetResolution(m.ResolutionX, m.ResolutionY);
             _vm.SFMLRendererViewModel.Speed = m.Speed;
             _vm.SFMLRendererViewModel.ShowAxis = m.ShowAxis;
+            _vm.SFMLRendererViewModel.UseCheckerboardBackground = m.UseCheckerboardBackground;
             _vm.SFMLRendererViewModel.BackgroundColor = m.BackgroundColor;
             _vm.SFMLRendererViewModel.BackgroundImageMode = m.BackgroundImageMode;
         }
@@ -328,6 +329,7 @@ public partial class MainWindow : Window
             ResolutionY = _vm.SFMLRendererViewModel.ResolutionY,
             Speed = _vm.SFMLRendererViewModel.Speed,
             ShowAxis = _vm.SFMLRendererViewModel.ShowAxis,
+            UseCheckerboardBackground = _vm.SFMLRendererViewModel.UseCheckerboardBackground,
             BackgroundColor = _vm.SFMLRendererViewModel.BackgroundColor,
             BackgroundImageMode = _vm.SFMLRendererViewModel.BackgroundImageMode,
         };
@@ -403,6 +405,7 @@ public partial class MainWindow : Window
             case nameof(SFMLRendererViewModel.ResolutionY):
             case nameof(SFMLRendererViewModel.Speed):
             case nameof(SFMLRendererViewModel.ShowAxis):
+            case nameof(SFMLRendererViewModel.UseCheckerboardBackground):
             case nameof(SFMLRendererViewModel.BackgroundColor):
             case nameof(SFMLRendererViewModel.BackgroundImageMode):
                 DelayedSaveUserState();

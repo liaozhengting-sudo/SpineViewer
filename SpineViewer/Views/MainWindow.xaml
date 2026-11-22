@@ -849,6 +849,16 @@
                                         <ToggleButton Grid.Column="1" IsChecked="{Binding ShowAxis}"/>
                                     </Grid>
 
+                                    <!-- 棋盘格背景 -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="LabelCol"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="{DynamicResource Str_CheckerboardBackground}" ToolTip="{DynamicResource Str_CheckerboardBackgroundTooltip}"/>
+                                        <ToggleButton Grid.Column="1" IsChecked="{Binding UseCheckerboardBackground}" ToolTip="{DynamicResource Str_CheckerboardBackgroundTooltip}"/>
+                                    </Grid>
+
                                     <!-- 背景颜色 -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -1440,7 +1450,17 @@
                                             </StackPanel>
                                         </Border>
                                     </TabItem.Header>
-                                    <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{DynamicResource DarkDefaultBrush}">
+                                    <Border Grid.Row="2" Grid.ColumnSpan="2">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{StaticResource CheckerboardBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SFMLRendererViewModel.UseCheckerboardBackground}" Value="False">
+                                                        <Setter Property="Background" Value="{DynamicResource DarkDefaultBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Image Source="{Binding AssetsPreviewViewModel.PreviewImage, Mode=OneWay}" Stretch="Uniform"/>
                                     </Border>
                                 </TabItem>

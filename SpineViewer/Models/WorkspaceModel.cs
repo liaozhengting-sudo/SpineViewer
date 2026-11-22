@@ -38,6 +38,8 @@ namespace SpineViewer.Models
 
         public bool ShowAxis { get; set; } = true;
 
+        public bool UseCheckerboardBackground { get; set; } = true;
+
         public Color BackgroundColor { get; set; }
 
         public string BackgroundImagePath { get; set; }

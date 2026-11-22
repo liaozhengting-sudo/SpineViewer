@@ -141,6 +141,8 @@
     <s:String x:Key="Str_LogHitSlots">Output Hit Test Slot Names</s:String>
     <s:String x:Key="Str_LogHitSlotsTooltip">When enabled, the log box will output the model and slot information for each click hit test.</s:String>
     <s:String x:Key="Str_ShowAxis">Show Axis</s:String>
+    <s:String x:Key="Str_CheckerboardBackground">Checkerboard Background</s:String>
+    <s:String x:Key="Str_CheckerboardBackgroundTooltip">When on, the preview and the model preview image use a checkerboard to show transparency. When off, the preview uses the solid color below and the preview image uses a dark background. A background image is still drawn on top. Exports and the desktop wallpaper always use the solid color.</s:String>
     <s:String x:Key="Str_BackgroundColor">Background Color</s:String>
     <s:String x:Key="Str_BackgroundImagePath">Background Image Path</s:String>
     <s:String x:Key="Str_BackgroundImageMode">Background Image Mode</s:String>

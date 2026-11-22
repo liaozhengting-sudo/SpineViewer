@@ -141,6 +141,8 @@
     <s:String x:Key="Str_LogHitSlots">输出命中检测结果的插槽名称</s:String>
     <s:String x:Key="Str_LogHitSlotsTooltip">启用后将会在日志框内输出每一次点击操作命中的模型和插槽情况</s:String>
     <s:String x:Key="Str_ShowAxis">显示坐标轴</s:String>
+    <s:String x:Key="Str_CheckerboardBackground">棋盘格背景</s:String>
+    <s:String x:Key="Str_CheckerboardBackgroundTooltip">开启后，预览画面和模型预览图用棋盘格表示透明区域。关闭后，预览画面使用下方纯色，预览图使用深色底。背景图片仍会叠在棋盘格之上。导出和桌面投影始终使用纯色，不会变成棋盘格或透明窗口。</s:String>
     <s:String x:Key="Str_BackgroundColor">背景颜色</s:String>
     <s:String x:Key="Str_BackgroundImagePath">背景图片路径</s:String>
     <s:String x:Key="Str_BackgroundImageMode">背景图片模式</s:String>
