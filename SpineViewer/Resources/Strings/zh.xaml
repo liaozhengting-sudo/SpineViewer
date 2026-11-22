@@ -208,12 +208,6 @@
     <s:String x:Key="Str_FileSidebarNotFound">找不到这个路径：{0}</s:String>
     <s:String x:Key="Str_FileSidebarAccessDenied">没有权限读取这个文件夹：{0}。{1}</s:String>
     <s:String x:Key="Str_FileSidebarReadError">无法读取这个文件夹：{0}。{1}</s:String>
-    <s:String x:Key="Str_RecentOpened">上次打开</s:String>
-    <s:String x:Key="Str_RecentOpenedTooltip">成功打开过的模型会记在这里。双击一条即可再加载。启动时不会自动全部载入。同名文件会带上所在文件夹。</s:String>
-    <s:String x:Key="Str_RecentOpenedClear">清空记录</s:String>
-    <s:String x:Key="Str_RecentOpenedClearTooltip">只清除这份记录，不删除磁盘上的文件。</s:String>
-    <s:String x:Key="Str_RecentOpenedMissing">文件已经不在：{0}</s:String>
-    <s:String x:Key="Str_RecentOpenedMark">已打开 </s:String>
     <s:String x:Key="Str_NoSkeletonFound">这个文件夹里没有找到可打开的骨骼文件。</s:String>
     <s:String x:Key="Str_FolderDropHint">可按住 Ctrl 或 Shift 多选文件夹和骨骼文件，一起拖到这里或左侧模型列表。不用点进去再拖 json。双击文件夹仍是进入该文件夹。</s:String>
     

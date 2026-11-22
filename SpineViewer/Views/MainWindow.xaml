@@ -1559,24 +1559,6 @@
                                              KeyDown="FileSidebarPath_KeyDown"/>
                                 </DockPanel>
                                 <TextBlock DockPanel.Dock="Bottom" Margin="0,4,0,0" Opacity="0.75" Text="{Binding StatusText}" TextWrapping="Wrap"/>
-                                <DockPanel DockPanel.Dock="Top" Margin="0,4,0,2">
-                                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,2">
-                                        <Button DockPanel.Dock="Right" Padding="6,0" Content="{DynamicResource Str_RecentOpenedClear}" Command="{Binding Cmd_ClearRecent}" ToolTip="{DynamicResource Str_RecentOpenedClearTooltip}"/>
-                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{DynamicResource Str_RecentOpened}" ToolTip="{DynamicResource Str_RecentOpenedTooltip}"/>
-                                    </DockPanel>
-                                    <ListBox x:Name="_recentFilesList"
-                                             ItemsSource="{Binding RecentFiles}"
-                                             MaxHeight="88"
-                                             BorderThickness="1"
-                                             ToolTip="{DynamicResource Str_RecentOpenedTooltip}"
-                                             MouseDoubleClick="RecentFiles_MouseDoubleClick">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Label}" ToolTip="{Binding FullPath}" Opacity="{Binding Opacity}"/>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </DockPanel>
                                 <!-- 不用 ListView：HandyControl 在 View 为空时会把整个控件换成空白占位，条目有了也看不见。 -->
                                 <ListBox x:Name="_fileBrowserList"
                                          ItemsSource="{Binding Entries}"
@@ -1594,9 +1576,20 @@
                                          KeyDown="FileBrowserList_KeyDown">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock VerticalAlignment="Center">
-                                                <Run Text="{Binding OpenedMark, Mode=OneWay}"/>
-                                                <Run Text="{Binding Name, Mode=OneWay}"/>
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsVisited}" Value="True"/>
+                                                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="False"/>
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Foreground" Value="#8ECAFF"/>
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
                                             </TextBlock>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>

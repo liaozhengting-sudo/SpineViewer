@@ -304,7 +304,7 @@ public partial class MainWindow : Window
             SetFileSidebarCollapsed(m.FileSidebarCollapsed);
             if (!string.IsNullOrWhiteSpace(m.FileBrowserDirectory))
                 _vm.FileBrowserViewModel.OpenDirectory(m.FileBrowserDirectory);
-            _vm.FileBrowserViewModel.ReplaceRecent(m.RecentOpenedFiles);
+            _vm.FileBrowserViewModel.ReplaceVisited(m.VisitedDirectories);
 
             _vm.SFMLRendererViewModel.SetResolution(m.ResolutionX, m.ResolutionY);
             _vm.SFMLRendererViewModel.Speed = m.Speed;
@@ -344,7 +344,7 @@ public partial class MainWindow : Window
             FileSidebarCollapsed = _fileSidebarCollapsed,
             FileSidebarWidth = _fileSidebarCollapsed ? _fileSidebarExpandedWidth.Value : _rootGrid.ColumnDefinitions[4].Width.Value,
             FileBrowserDirectory = _vm.FileBrowserViewModel.CurrentDirectory,
-            RecentOpenedFiles = _vm.FileBrowserViewModel.RecentPaths.ToList(),
+            VisitedDirectories = _vm.FileBrowserViewModel.VisitedPaths.ToList(),
 
             ResolutionX = _vm.SFMLRendererViewModel.ResolutionX,
             ResolutionY = _vm.SFMLRendererViewModel.ResolutionY,
@@ -408,10 +408,10 @@ public partial class MainWindow : Window
         _userStateWatchers.Add(PropertyWatcher.Watch(_rootGrid.ColumnDefinitions[4], ColumnDefinition.WidthProperty, DelayedSaveUserState));
 
         _vm.SFMLRendererViewModel.PropertyChanged += SFMLRendererUserStateChanged;
-        _vm.FileBrowserViewModel.RecentChanged += FileBrowserRecentChanged;
+        _vm.FileBrowserViewModel.VisitedChanged += FileBrowserVisitedChanged;
     }
 
-    private void FileBrowserRecentChanged(object? sender, EventArgs e)
+    private void FileBrowserVisitedChanged(object? sender, EventArgs e)
     {
         DelayedSaveUserState();
     }
@@ -420,7 +420,7 @@ public partial class MainWindow : Window
     {
         // 撤除所有状态监听器
         _vm.SFMLRendererViewModel.PropertyChanged -= SFMLRendererUserStateChanged;
-        _vm.FileBrowserViewModel.RecentChanged -= FileBrowserRecentChanged;
+        _vm.FileBrowserViewModel.VisitedChanged -= FileBrowserVisitedChanged;
         foreach (var w in _userStateWatchers) w.Dispose();
         _userStateWatchers.Clear();
 
@@ -447,14 +447,6 @@ public partial class MainWindow : Window
     #endregion
 
     #region ColorPicker 弹窗事件处理
-
-    private void RecentFiles_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
-        if (item?.DataContext is not RecentOpenedFile file)
-            return;
-        _vm.FileBrowserViewModel.LoadRecent(file);
-    }
 
     private void PlaybackSlider_DragStarted(object sender, DragStartedEventArgs e)
     {

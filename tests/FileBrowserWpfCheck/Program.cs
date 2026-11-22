@@ -30,6 +30,12 @@ public static class Program
             Console.Error.WriteLine("dark theme contrast failed");
             return 1;
         }
+        var visited = (Color)ColorConverter.ConvertFromString("#8ECAFF");
+        if (Lum(visited) < 0.55 || Math.Abs(Lum(visited) - Lum(text.Color)) < 0.08)
+        {
+            Console.Error.WriteLine("visited folder color is not distinct on the dark surface");
+            return 1;
+        }
 
         var entries = new ObservableCollection<string> { "模型", "甲", "乙", "hero.skel" };
         var list = new ListBox

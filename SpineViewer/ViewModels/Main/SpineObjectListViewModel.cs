@@ -170,13 +170,19 @@ namespace SpineViewer.ViewModels.Main
                         return;
                 }
                 ProgressService.RunAsync(
-                    (pr, ct) => AddSpineObjectsTask(validPaths.ToArray(), pr, ct),
+                    (pr, ct) =>
+                    {
+                        var loaded = AddSpineObjectsTask(validPaths.ToArray(), pr, ct);
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                            _vmMain.FileBrowserViewModel.NoteLoadedFolders(input, loaded)));
+                    },
                     AppResource.Str_AddSpineObjectsTitle
                 );
             }
             else if (validPaths.Count > 0)
             {
-                InsertSpineObject(validPaths[0]);
+                if (InsertSpineObject(validPaths[0]))
+                    _vmMain.FileBrowserViewModel.NoteLoadedFolders(input, validPaths);
                 _logger.LogCurrentProcessMemoryUsage();
             }
         }
@@ -184,11 +190,12 @@ namespace SpineViewer.ViewModels.Main
         /// <summary>
         /// 用于后台添加模型的任务方法
         /// </summary>
-        private void AddSpineObjectsTask(string[] paths, IProgressReporter reporter, CancellationToken ct)
+        private string[] AddSpineObjectsTask(string[] paths, IProgressReporter reporter, CancellationToken ct)
         {
             int totalCount = paths.Length;
             int success = 0;
             int error = 0;
+            var loaded = new List<string>();
 
             _vmMain.ProgressState = TaskbarItemProgressState.Normal;
             _vmMain.ProgressValue = 0;
@@ -204,7 +211,10 @@ namespace SpineViewer.ViewModels.Main
                 reporter.ProgressText = $"[{i}/{totalCount}] {skelPath}";
 
                 if (InsertSpineObject(skelPath))
+                {
                     success++;
+                    loaded.Add(skelPath);
+                }
                 else
                     error++;
 
@@ -220,6 +230,7 @@ namespace SpineViewer.ViewModels.Main
                 _logger.Info("{0} skel loaded successfully", success);
 
             _logger.LogCurrentProcessMemoryUsage();
+            return loaded.ToArray();
         }
 
         /// <summary>
@@ -274,7 +285,6 @@ namespace SpineViewer.ViewModels.Main
                         RequestSelectionChanging?.Invoke(this, new(NotifyCollectionChangedAction.Add, sp));
                     });
                 }
-                _vmMain.FileBrowserViewModel.RememberLoaded(skelPath);
                 return true;
             }
             catch (Exception ex)
@@ -830,7 +840,6 @@ namespace SpineViewer.ViewModels.Main
                         RequestSelectionChanging?.Invoke(this, new(NotifyCollectionChangedAction.Add, sp));
                     });
                 }
-                _vmMain.FileBrowserViewModel.RememberLoaded(cfg.SkelPath);
                 return true;
             }
             catch (Exception ex)
