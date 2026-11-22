@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using NLog;
 using Spine;
+using Spine.Utils;
 using SpineViewer.Extensions;
 using SpineViewer.Models;
 using SpineViewer.Resources;
@@ -126,26 +127,41 @@ namespace SpineViewer.ViewModels.Main
         /// <param name="paths">可以是文件和文件夹</param>
         public void AddSpineObjectFromFileList(IEnumerable<string> paths)
         {
-            List<string> validPaths = [];
-            foreach (var path in paths)
+            var input = paths.Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            if (input.Length == 0)
+                return;
+
+            if (input.Any(Directory.Exists))
             {
-                if (File.Exists(path))
+                Task.Run(() =>
                 {
-                    var lowerPath = path.ToLowerInvariant();
-                    if (SpineObject.PossibleSuffixMapping.Keys.Any(lowerPath.EndsWith))
-                        validPaths.Add(path);
-                }
-                else if (Directory.Exists(path))
-                {
-                    foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
+                    IReadOnlyList<string> resolved;
+                    try
                     {
-                        var lowerPath = file.ToLowerInvariant();
-                        if (SpineObject.PossibleSuffixMapping.Keys.Any(lowerPath.EndsWith))
-                            validPaths.Add(file);
+                        resolved = SkeletonDirectoryListing.ResolveLoadPaths(input);
                     }
-                }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                    Application.Current?.Dispatcher.InvokeAsync(() => LoadResolvedSkeletonFiles(input, resolved));
+                });
+                return;
             }
 
+            LoadResolvedSkeletonFiles(input, SkeletonDirectoryListing.ResolveLoadPaths(input));
+        }
+
+        private void LoadResolvedSkeletonFiles(string[] input, IReadOnlyList<string> resolved)
+        {
+            if (resolved.Count == 0)
+            {
+                if (input.Any(Directory.Exists))
+                    MessagePopupService.Info(AppResource.Str_NoSkeletonFound);
+                return;
+            }
+
+            var validPaths = resolved.ToList();
             if (validPaths.Count > 1)
             {
                 if (validPaths.Count > 100)

@@ -1422,6 +1422,10 @@
                                                     DataContext="{Binding SFMLRendererViewModel}"
                                                     Grid.IsSharedSizeScope="True"
                                                     Background="{DynamicResource RegionBrush}">
+                                                <TextBlock Margin="8,4,8,0"
+                                                           Opacity="0.8"
+                                                           Text="{DynamicResource Str_FolderDropHint}"
+                                                           TextWrapping="Wrap"/>
                                                 <Grid Margin="8,4,8,0" ToolTip="{DynamicResource Str_PlaybackProgressTooltip}">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>

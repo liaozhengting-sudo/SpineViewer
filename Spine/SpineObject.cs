@@ -30,14 +30,7 @@ namespace Spine
         /// </summary>
         public static bool IsPossibleSkeletonFile(string? path)
         {
-            if (string.IsNullOrEmpty(path))
-                return false;
-            foreach (var suffix in PossibleSuffixMapping.Keys)
-            {
-                if (path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
+            return Utils.SkeletonDirectoryListing.MatchSkeletonSuffix(path) is not null;
         }
 
         /// <summary>

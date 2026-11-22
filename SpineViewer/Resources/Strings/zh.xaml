@@ -208,6 +208,8 @@
     <s:String x:Key="Str_FileSidebarNotFound">找不到这个路径：{0}</s:String>
     <s:String x:Key="Str_FileSidebarAccessDenied">没有权限读取这个文件夹：{0}。{1}</s:String>
     <s:String x:Key="Str_FileSidebarReadError">无法读取这个文件夹：{0}。{1}</s:String>
+    <s:String x:Key="Str_NoSkeletonFound">这个文件夹里没有找到可打开的骨骼文件。</s:String>
+    <s:String x:Key="Str_FolderDropHint">把模型文件夹拖到这里，或拖到左侧模型列表，就会自动加载里面的骨骼。不用先点进去找 json。</s:String>
     
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">清除日志</s:String>

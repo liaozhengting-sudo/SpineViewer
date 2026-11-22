@@ -130,21 +130,14 @@ namespace SpineViewer.ViewModels.Main
         }
 
         /// <summary>
-        /// 只加载选中的骨骼文件。选中的如果全是文件夹，则进入第一个文件夹。
+        /// 加载选中的骨骼文件或文件夹。文件夹会按加载器支持的格式自动找出骨骼。
         /// </summary>
         public void LoadEntries(IEnumerable<FileBrowserEntry> entries)
         {
-            var list = entries.ToArray();
-            var files = list.Where(e => e.IsSpineFile).Select(e => e.FullPath).ToArray();
-            if (files.Length > 0)
-            {
-                _vmMain.SpineObjectListViewModel.AddSpineObjectFromFileList(files);
+            var paths = entries.Select(e => e.FullPath).ToArray();
+            if (paths.Length == 0)
                 return;
-            }
-
-            var directory = list.FirstOrDefault(e => e.IsDirectory);
-            if (directory is not null)
-                OpenDirectory(directory.FullPath);
+            _vmMain.SpineObjectListViewModel.AddSpineObjectFromFileList(paths);
         }
 
         public void OpenDirectory(string path)

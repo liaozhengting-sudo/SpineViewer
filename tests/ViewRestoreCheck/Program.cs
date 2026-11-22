@@ -73,6 +73,42 @@ finally
     Directory.Delete(root, true);
 }
 
+var suffixes = Spine.SpineObject.PossibleSuffixMapping.Keys.OrderBy(s => s).ToArray();
+Console.WriteLine("supported-skeleton-suffixes: " + string.Join(", ", suffixes));
+var formatRoot = Path.Combine(Path.GetTempPath(), "sv-fmt-" + Guid.NewGuid().ToString("N"));
+var modelDir = Path.Combine(formatRoot, "角色");
+Directory.CreateDirectory(modelDir);
+try
+{
+    var expected = new List<string>();
+    foreach (var suffix in suffixes)
+    {
+        var file = Path.Combine(modelDir, "solo-" + suffix.TrimStart('.').Replace('.', '_') + suffix);
+        File.WriteAllText(file, "x");
+        expected.Add(Path.GetFullPath(file));
+    }
+    File.WriteAllText(Path.Combine(modelDir, "hero.atlas"), "atlas");
+    File.WriteAllText(Path.Combine(modelDir, "hero.png"), "png");
+    File.WriteAllText(Path.Combine(modelDir, "hero.atlas.txt"), "atlas");
+    foreach (var suffix in suffixes)
+        File.WriteAllText(Path.Combine(modelDir, "same" + suffix), "x");
+
+    var discovered = Spine.Utils.SkeletonDirectoryListing.ResolveLoadPaths([formatRoot]);
+    foreach (var file in expected)
+        failed |= Expect("文件夹发现支持格式 " + Path.GetFileName(file), discovered.Contains(file, StringComparer.OrdinalIgnoreCase));
+    failed |= Expect("不把 atlas/png 当成模型", !discovered.Any(p => p.EndsWith(".atlas", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || p.EndsWith(".atlas.txt", StringComparison.OrdinalIgnoreCase)));
+    var same = discovered.Where(p => Path.GetFileName(p).StartsWith("same", StringComparison.OrdinalIgnoreCase)).ToArray();
+    failed |= Expect("同一主名的多种骨骼格式只保留一个", same.Length == 1);
+    var direct = Path.Combine(formatRoot, "only" + suffixes[0]);
+    File.WriteAllText(direct, "x");
+    var fromFile = Spine.Utils.SkeletonDirectoryListing.ResolveLoadPaths([direct]);
+    failed |= Expect("直接拖入支持的文件仍会加载", fromFile.Count == 1);
+}
+finally
+{
+    Directory.Delete(formatRoot, true);
+}
+
 return failed ? 1 : 0;
 
 static string FindRendererSource() => FindUp("SpineViewer", "ViewModels", "Main", "SFMLRendererViewModel.cs");

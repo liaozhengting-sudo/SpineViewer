@@ -208,6 +208,8 @@
     <s:String x:Key="Str_FileSidebarNotFound">パスが見つかりません：{0}</s:String>
     <s:String x:Key="Str_FileSidebarAccessDenied">このフォルダを読めません（権限不足）：{0}。{1}</s:String>
     <s:String x:Key="Str_FileSidebarReadError">このフォルダを読めません：{0}。{1}</s:String>
+    <s:String x:Key="Str_NoSkeletonFound">このフォルダには開けるスケルトンがありません。</s:String>
+    <s:String x:Key="Str_FolderDropHint">モデルフォルダをここ、または左のモデル一覧へドラッグすると中のスケルトンを読み込みます。json を開いて選ぶ必要はありません。</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">ログをクリア</s:String>

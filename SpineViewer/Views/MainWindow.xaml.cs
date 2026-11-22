@@ -44,6 +44,7 @@ public partial class MainWindow : Window
     private ListViewItem? _listViewDragSourceItem = null;
     private Point _fileBrowserDragStart;
     private FileBrowserEntry? _fileBrowserDragEntry;
+    private bool _fileBrowserDragStarted;
     private GridLength _fileSidebarExpandedWidth = new(280);
     private bool _fileSidebarCollapsed;
     private Point _listViewDragSourcePoint;
@@ -707,11 +708,7 @@ public partial class MainWindow : Window
     private void PreviewChrome_Drop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
-        {
-            var files = paths.Where(File.Exists).Where(SpineObject.IsPossibleSkeletonFile).ToArray();
-            if (files.Length > 0)
-                _vm.SpineObjectListViewModel.AddSpineObjectFromFileList(files);
-        }
+            _vm.SpineObjectListViewModel.AddSpineObjectFromFileList(paths);
         e.Handled = true;
     }
 
@@ -722,6 +719,11 @@ public partial class MainWindow : Window
 
     private void FileBrowserList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
+        if (_fileBrowserDragStarted)
+        {
+            _fileBrowserDragStarted = false;
+            return;
+        }
         var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
         if (item?.DataContext is not FileBrowserEntry entry)
             return;
@@ -748,7 +750,7 @@ public partial class MainWindow : Window
 
     private void FileBrowserList_MouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || _fileBrowserDragEntry is not { IsSpineFile: true })
+        if (e.LeftButton != MouseButtonState.Pressed || _fileBrowserDragEntry is null)
             return;
 
         var diff = _fileBrowserDragStart - e.GetPosition(null);
@@ -756,15 +758,15 @@ public partial class MainWindow : Window
             Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance)
             return;
 
-        var files = _fileBrowserList.SelectedItems.Cast<FileBrowserEntry>()
-            .Where(it => it.IsSpineFile)
+        var paths = _fileBrowserList.SelectedItems.Cast<FileBrowserEntry>()
             .Select(it => it.FullPath)
             .ToArray();
-        if (files.Length == 0)
-            files = [_fileBrowserDragEntry.FullPath];
+        if (paths.Length == 0)
+            paths = [_fileBrowserDragEntry.FullPath];
 
         _fileBrowserDragEntry = null;
-        DragDrop.DoDragDrop(_fileBrowserList, new DataObject(DataFormats.FileDrop, files), DragDropEffects.Copy);
+        _fileBrowserDragStarted = true;
+        DragDrop.DoDragDrop(_fileBrowserList, new DataObject(DataFormats.FileDrop, paths), DragDropEffects.Copy);
     }
 
     private void FileBrowserList_KeyDown(object sender, KeyEventArgs e)
