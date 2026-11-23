@@ -253,13 +253,67 @@ namespace SpineViewer.Models
                     entry = _spineObject.AnimationState.SetAnimation(index, name, true);
                     entry.TimeScale = lastTimeScale;
                     entry.Alpha = lastAlpha;
-
-                    // XXX(#105): 部分 3.4.02 版本模型在设置动画后出现附件残留, 因此强制进行一次 Setup
-                    if (_spineObject.Version == SpineVersion.V34)
-                    {
-                        _spineObject.Skeleton.SetSlotsToSetupPose();
-                    }
+                    // 新动画没打关键帧的槽位回到 Setup，其它轨道会在这一次里重新套上。
+                    _spineObject.ReleaseUnkeyedSlotPose(entry);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 读取轨道在当前动画内的位置。循环时对时长取模，没有该轨道时返回 false。
+        /// </summary>
+        public bool TryGetTrackPlayback(int index, out float time, out float duration)
+        {
+            lock (_lock)
+            {
+                var entry = _spineObject.AnimationState.GetCurrent(index);
+                if (entry?.Animation is null)
+                {
+                    time = 0;
+                    duration = 0;
+                    return false;
+                }
+
+                duration = Math.Max(0, entry.Animation.Duration);
+                if (duration <= 0.0001f)
+                {
+                    time = 0;
+                    return true;
+                }
+
+                var trackTime = entry.TrackTime;
+                if (entry.Loop)
+                {
+                    time = trackTime % duration;
+                    if (time < 0) time += duration;
+                }
+                else
+                {
+                    time = Math.Clamp(trackTime, 0, duration);
+                }
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// 把轨道跳到指定时间并立刻刷新姿势。不改变循环和播放状态。
+        /// </summary>
+        public void SeekTrack(int index, float time)
+        {
+            lock (_lock)
+            {
+                var entry = _spineObject.AnimationState.GetCurrent(index);
+                if (entry?.Animation is null) return;
+
+                var duration = entry.Animation.Duration;
+                if (float.IsNaN(time) || float.IsInfinity(time) || time < 0) time = 0;
+                if (duration <= 0.0001f)
+                    time = 0;
+                else if (!entry.Loop && time > duration)
+                    time = duration;
+
+                entry.TrackTime = time;
+                _spineObject.Update(0);
             }
         }
 
@@ -312,7 +366,11 @@ namespace SpineViewer.Models
 
         public void ClearTrack(int index)
         {
-            lock (_lock) _spineObject.AnimationState.ClearTrack(index);
+            lock (_lock)
+            {
+                _spineObject.AnimationState.ClearTrack(index);
+                _spineObject.ReleaseUnkeyedSlotPose(null);
+            }
         }
 
         public void ResetAnimationsTime()
@@ -523,11 +581,7 @@ namespace SpineViewer.Models
                         trackIndex++;
                     }
 
-                    // XXX(#105): 部分 3.4.02 版本模型在设置动画后出现附件残留, 因此强制进行一次 Setup
-                    if (_spineObject.Version == SpineVersion.V34)
-                    {
-                        _spineObject.Skeleton.SetSlotsToSetupPose();
-                    }
+                    _spineObject.ReleaseUnkeyedSlotPose(null);
 
                     SetProperty(_spineObject.DebugTexture, m.DebugTexture, v => _spineObject.DebugTexture = v, nameof(DebugTexture));
                     SetProperty(_spineObject.DebugBounds, m.DebugBounds, v => _spineObject.DebugBounds = v, nameof(DebugBounds));
@@ -611,7 +665,7 @@ namespace SpineViewer.Models
     public class SpineObjectLoadOptions
     {
         public bool IsShown { get; set; } = true;
-        public bool UsePma { get; set; }
+        public bool UsePma { get; set; } = true;
         public bool DebugTexture { get; set; } = true;
         public bool DebugBounds { get; set; }
         public bool DebugBones { get; set; }

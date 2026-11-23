@@ -46,6 +46,10 @@
     <s:String x:Key="Str_AddSpineObjectFromClipboard">クリップボードから追加</s:String>
     <s:String x:Key="Str_AddSpineObjectsTitle">一括でスケルトンファイルを追加</s:String>
     <s:String x:Key="Str_RemoveSpineObject">削除</s:String>
+    <s:String x:Key="Str_RemoveSelectedModels">選択したモデルを除去</s:String>
+    <s:String x:Key="Str_RemoveSelectedModelsTooltip">プレビューと左の一覧から外します。ディスク上のファイルは削除しません。Ctrl または Shift で複数選択できます。</s:String>
+    <s:String x:Key="Str_RemoveThisModel">除去</s:String>
+    <s:String x:Key="Str_RemoveThisModelTooltip">この1件だけをプレビューから外します。ディスク上のファイルは残し、他の選択には影響しません。</s:String>
     <s:String x:Key="Str_RemoveAllSpineObject">すべて削除</s:String>
     <s:String x:Key="Str_Reload">再読み込み</s:String>
     <s:String x:Key="Str_ReloadSpineObjectsTitle">スケルトンファイルの再読み込み</s:String>
@@ -141,6 +145,8 @@
     <s:String x:Key="Str_LogHitSlots">ヒットテスト結果のスロット名を出力</s:String>
     <s:String x:Key="Str_LogHitSlotsTooltip">有効にすると、ログボックスに各クリック操作で命中したモデルとスロットの情報が出力されます。</s:String>
     <s:String x:Key="Str_ShowAxis">座標軸を表示</s:String>
+    <s:String x:Key="Str_CheckerboardBackground">市松模様の背景</s:String>
+    <s:String x:Key="Str_CheckerboardBackgroundTooltip">オンにすると、プレビュー画面とモデルプレビュー画像で透明部分を市松模様で表示します。オフにすると、プレビューは下の単色、プレビュー画像は暗い背景になります。背景画像は市松模様の上に描画されます。書き出しとデスクトップ壁紙は常に単色です。</s:String>
     <s:String x:Key="Str_BackgroundColor">背景色</s:String>
     <s:String x:Key="Str_BackgroundImagePath">背景画像のパス</s:String>
     <s:String x:Key="Str_BackgroundImageMode">背景画像のモード</s:String>
@@ -187,10 +193,27 @@
     <s:String x:Key="Str_StopTooltip">停止</s:String>
     <s:String x:Key="Str_RestartTooltip">最初から再生</s:String>
     <s:String x:Key="Str_PlayPauseTooltip">再生/一時停止</s:String>
+    <s:String x:Key="Str_PlaybackProgressTooltip">トラック 0 の再生位置です。現在時間 / アニメーション長さ（秒）。一時停止中もドラッグできます。選択中で表示されているモデル、なければ最初の表示モデルを基準にします。ドラッグすると表示中の全モデルのトラック 0 をその時刻へ移動し、他のトラックは変えません。再生中なら離した位置から続きます。</s:String>
     <s:String x:Key="Str_ForwardStepTooltip">1フレーム進める</s:String>
     <s:String x:Key="Str_ForwardFastTooltip">10フレーム進める</s:String>
     <s:String x:Key="Str_FullScreenTooltip">ウィンドウ/フルスクリーン; F11</s:String>
     <s:String x:Key="Str_ResetViewTooltip">表示位置とズームを初期状態に戻す; Ctrl+0</s:String>
+    <s:String x:Key="Str_FileSidebarTooltip">ファイル欄を折りたたむ／展開します。現在のフォルダだけを表示し、プレビューは隠しません。</s:String>
+    <s:String x:Key="Str_FileSidebarOpen">開く</s:String>
+    <s:String x:Key="Str_FileSidebarOpenTooltip">表示するフォルダを選択</s:String>
+    <s:String x:Key="Str_FileSidebarUp">上へ</s:String>
+    <s:String x:Key="Str_FileSidebarRefresh">更新</s:String>
+    <s:String x:Key="Str_FileSidebarLoad">読み込む</s:String>
+    <s:String x:Key="Str_FileSidebarLoadTooltip">選択したスケルトンを読み込みます。ファイルのダブルクリックでも読み込めます。ファイルを左のモデル一覧へドラッグするとプレビューに追加されます。フォルダをここにドロップしても、そのフォルダを開くだけです。</s:String>
+    <s:String x:Key="Str_FileSidebarGo">移動</s:String>
+    <s:String x:Key="Str_FileSidebarGoTooltip">アドレスのパスを開きます。Enter でも同じです。</s:String>
+    <s:String x:Key="Str_FileSidebarStatus">サブフォルダ {0}、スケルトン {1}。atlas と画像は表示しません。</s:String>
+    <s:String x:Key="Str_FileSidebarEmpty">サブフォルダも skel / skel.bytes / json もありません。atlas と画像は表示しません。</s:String>
+    <s:String x:Key="Str_FileSidebarNotFound">パスが見つかりません：{0}</s:String>
+    <s:String x:Key="Str_FileSidebarAccessDenied">このフォルダを読めません（権限不足）：{0}。{1}</s:String>
+    <s:String x:Key="Str_FileSidebarReadError">このフォルダを読めません：{0}。{1}</s:String>
+    <s:String x:Key="Str_NoSkeletonFound">このフォルダには開けるスケルトンがありません。</s:String>
+    <s:String x:Key="Str_FolderDropHint">Ctrl または Shift でフォルダとスケルトンを複数選び、ここか左のモデル一覧へまとめてドラッグできます。フォルダのダブルクリックはフォルダを開きます。</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">ログをクリア</s:String>

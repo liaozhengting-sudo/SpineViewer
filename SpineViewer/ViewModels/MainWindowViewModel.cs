@@ -29,6 +29,7 @@ namespace SpineViewer.ViewModels
             _sfmlRenderer = sfmlRenderer;
             _wallpaperRenderer = wallpaperRenderer;
             _spineObjectListViewModel = new(this);
+            _fileBrowserViewModel = new(this);
             _assetsPreviewViewModel = new(this);
             _localAssetsViewModel = new(this);
             _gitHubAssetsViewModel = new(this);
@@ -111,6 +112,12 @@ namespace SpineViewer.ViewModels
         /// </summary>
         public SpineObjectListViewModel SpineObjectListViewModel => _spineObjectListViewModel;
         private readonly SpineObjectListViewModel _spineObjectListViewModel;
+
+        /// <summary>
+        /// 右侧文件浏览栏
+        /// </summary>
+        public FileBrowserViewModel FileBrowserViewModel => _fileBrowserViewModel;
+        private readonly FileBrowserViewModel _fileBrowserViewModel;
 
         /// <summary>
         /// 模型属性页 ViewModel

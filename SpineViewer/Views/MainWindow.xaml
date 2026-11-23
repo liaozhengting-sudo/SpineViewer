@@ -88,6 +88,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="2.5*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="280" MinWidth="28"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 功能页容器 -->
@@ -116,6 +118,14 @@
 
                                     <!-- 模型列表 -->
                                     <DockPanel DataContext="{Binding SpineObjectListViewModel}">
+                                        <Button DockPanel.Dock="Top"
+                                                Margin="4,4,4,0"
+                                                HorizontalAlignment="Left"
+                                                MinWidth="128"
+                                                Content="{DynamicResource Str_RemoveSelectedModels}"
+                                                ToolTip="{DynamicResource Str_RemoveSelectedModelsTooltip}"
+                                                Command="{Binding Cmd_RemoveSpineObject}"
+                                                CommandParameter="{Binding SelectedItems, ElementName=_spinesListView}"/>
                                         <StatusBar DockPanel.Dock="Bottom">
                                             <StatusBarItem>
                                                 <TextBlock>
@@ -249,6 +259,17 @@
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <CheckBox IsChecked="{Binding IsShown}"/>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                    <GridViewColumn Width="64">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="{DynamicResource Str_RemoveThisModel}"
+                                                                        Padding="6,0"
+                                                                        Focusable="False"
+                                                                        PreviewMouseLeftButtonDown="RemoveOneModel_PreviewMouseLeftButtonDown"
+                                                                        ToolTip="{DynamicResource Str_RemoveThisModelTooltip}"/>
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
                                                     </GridViewColumn>
@@ -849,6 +870,16 @@
                                         <ToggleButton Grid.Column="1" IsChecked="{Binding ShowAxis}"/>
                                     </Grid>
 
+                                    <!-- 棋盘格背景 -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="LabelCol"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="{DynamicResource Str_CheckerboardBackground}" ToolTip="{DynamicResource Str_CheckerboardBackgroundTooltip}"/>
+                                        <ToggleButton Grid.Column="1" IsChecked="{Binding UseCheckerboardBackground}" ToolTip="{DynamicResource Str_CheckerboardBackgroundTooltip}"/>
+                                    </Grid>
+
                                     <!-- 背景颜色 -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -1400,14 +1431,40 @@
                                         </Border>
 
                                         <!-- 预览画面按钮组容器 -->
-                                        <Border Grid.Row="1" x:Name="_renderPanelButtonsContainer">
+                                        <Border Grid.Row="1" x:Name="_renderPanelButtonsContainer"
+                                                AllowDrop="True"
+                                                DragOver="PreviewChrome_DragOver"
+                                                Drop="PreviewChrome_Drop">
 
                                             <!-- 画面按钮 -->
-                                            <Border x:Name="_renderPanelButtonsPanel"
+                                            <StackPanel x:Name="_renderPanelButtonsPanel"
                                                     DataContext="{Binding SFMLRendererViewModel}"
-                                                    Grid.Row="1" 
                                                     Grid.IsSharedSizeScope="True"
                                                     Background="{DynamicResource RegionBrush}">
+                                                <TextBlock Margin="8,4,8,0"
+                                                           Opacity="0.8"
+                                                           Text="{DynamicResource Str_FolderDropHint}"
+                                                           TextWrapping="Wrap"/>
+                                                <Grid Margin="8,0,8,0" Height="16" ToolTip="{DynamicResource Str_PlaybackProgressTooltip}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Slider x:Name="_playbackSlider"
+                                                            Height="16"
+                                                            Minimum="0"
+                                                            Maximum="{Binding PlaybackSliderMaximum, Mode=OneWay}"
+                                                            Value="{Binding PlaybackPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            IsEnabled="{Binding CanScrub}"
+                                                            IsMoveToPointEnabled="True"
+                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1"
+                                                               Margin="6,0,0,0"
+                                                               MinWidth="68"
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               Text="{Binding PlaybackTimeText, Mode=OneWay}"/>
+                                                </Grid>
                                                 <WrapPanel HorizontalAlignment="Center">
                                                     <WrapPanel.Resources>
                                                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ButtonDefault}">
@@ -1423,7 +1480,7 @@
                                                     <Button x:Name="_fullScreenButton" hc:IconElement.Geometry="{StaticResource Geo_ArrowsMaximize}" Click="ButtonFullScreen_Click" ToolTip="{DynamicResource Str_FullScreenTooltip}"/>
                                                     <Button hc:IconElement.Geometry="{StaticResource Geo_House}" Command="{Binding Cmd_ResetView}" ToolTip="{DynamicResource Str_ResetViewTooltip}"/>
                                                 </WrapPanel>
-                                            </Border>
+                                            </StackPanel>
                                         </Border>
                                     </Grid>
                                 </TabItem>
@@ -1440,7 +1497,17 @@
                                             </StackPanel>
                                         </Border>
                                     </TabItem.Header>
-                                    <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{DynamicResource DarkDefaultBrush}">
+                                    <Border Grid.Row="2" Grid.ColumnSpan="2">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{StaticResource CheckerboardBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SFMLRendererViewModel.UseCheckerboardBackground}" Value="False">
+                                                        <Setter Property="Background" Value="{DynamicResource DarkDefaultBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Image Source="{Binding AssetsPreviewViewModel.PreviewImage, Mode=OneWay}" Stretch="Uniform"/>
                                     </Border>
                                 </TabItem>
@@ -1476,6 +1543,61 @@
                                     </DockPanel>
                                 </Border>
                             </Border>
+                        </Grid>
+                    </Border>
+
+                    <GridSplitter x:Name="_fileSidebarSplitter" Grid.Column="3" ResizeDirection="Columns" Width="3"/>
+
+                    <Border Grid.Column="4" Background="{DynamicResource RegionBrush}"
+                            AllowDrop="True"
+                            DragEnter="FileSidebar_DragEnter"
+                            DragOver="FileSidebar_DragOver"
+                            Drop="FileSidebar_Drop">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Click="FileSidebarToggle_Click"
+                                    ToolTip="{DynamicResource Str_FileSidebarTooltip}"
+                                    VerticalAlignment="Stretch"
+                                    Padding="0">
+                                <TextBlock x:Name="_fileSidebarToggleGlyph" Text="»" HorizontalAlignment="Center"/>
+                            </Button>
+                            <DockPanel x:Name="_fileBrowserPanel" Grid.Column="1" Margin="4" DataContext="{Binding FileBrowserViewModel}">
+                                <ToolBar DockPanel.Dock="Top" ToolBarTray.IsLocked="True">
+                                    <Button Content="{DynamicResource Str_FileSidebarOpen}" Command="{Binding Cmd_OpenFolder}" ToolTip="{DynamicResource Str_FileSidebarOpenTooltip}"/>
+                                    <Button Content="{DynamicResource Str_FileSidebarUp}" Command="{Binding Cmd_Up}"/>
+                                    <Button Content="{DynamicResource Str_FileSidebarRefresh}" Command="{Binding Cmd_Refresh}"/>
+                                    <Button Content="{DynamicResource Str_FileSidebarLoad}" Click="FileSidebarLoad_Click" ToolTip="{DynamicResource Str_FileSidebarLoadTooltip}"/>
+                                </ToolBar>
+                                <DockPanel DockPanel.Dock="Top" Margin="0,4">
+                                    <Button DockPanel.Dock="Right" Margin="4,0,0,0" Content="{DynamicResource Str_FileSidebarGo}" Command="{Binding Cmd_Go}" ToolTip="{DynamicResource Str_FileSidebarGoTooltip}"/>
+                                    <TextBox Text="{Binding PathInput, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="{DynamicResource Str_FileSidebarGoTooltip}"
+                                             KeyDown="FileSidebarPath_KeyDown"/>
+                                </DockPanel>
+                                <TextBlock DockPanel.Dock="Bottom" Margin="0,4,0,0" Opacity="0.75" Text="{Binding StatusText}" TextWrapping="Wrap"/>
+                                <!-- 不用 ListView：HandyControl 在 View 为空时会把整个控件换成空白占位，条目有了也看不见。 -->
+                                <ListBox x:Name="_fileBrowserList"
+                                         ItemsSource="{Binding Entries}"
+                                         SelectionMode="Extended"
+                                         Foreground="{DynamicResource PrimaryTextBrush}"
+                                         BorderThickness="1"
+                                         HorizontalContentAlignment="Stretch"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.VirtualizationMode="Recycling"
+                                         ItemContainerStyle="{StaticResource FileBrowserItemStyle}"
+                                         ItemTemplate="{StaticResource FileBrowserItemTemplate}"
+                                         MouseDoubleClick="FileBrowserList_MouseDoubleClick"
+                                         PreviewKeyUp="FileBrowserList_PreviewKeyUp"
+                                         PreviewMouseLeftButtonDown="FileBrowserList_PreviewMouseLeftButtonDown"
+                                         PreviewMouseLeftButtonUp="FileBrowserList_PreviewMouseLeftButtonUp"
+                                         MouseMove="FileBrowserList_MouseMove"
+                                         KeyDown="FileBrowserList_KeyDown"/>
+                            </DockPanel>
                         </Grid>
                     </Border>
                 </Grid>

@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using NLog;
 using Spine;
+using Spine.Utils;
 using SpineViewer.Extensions;
 using SpineViewer.Models;
 using SpineViewer.Resources;
@@ -108,6 +109,7 @@ namespace SpineViewer.ViewModels.Main
                 foreach (var it in selectedItems) it.IsSelected = true;
                 _vmMain.SpineObjectTabViewModel.SelectedObjects = selectedItems;
             }
+            Cmd_RemoveSpineObject.NotifyCanExecuteChanged();
         }
 
         /// <summary>
@@ -126,26 +128,41 @@ namespace SpineViewer.ViewModels.Main
         /// <param name="paths">可以是文件和文件夹</param>
         public void AddSpineObjectFromFileList(IEnumerable<string> paths)
         {
-            List<string> validPaths = [];
-            foreach (var path in paths)
+            var input = paths.Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            if (input.Length == 0)
+                return;
+
+            if (input.Any(Directory.Exists))
             {
-                if (File.Exists(path))
+                Task.Run(() =>
                 {
-                    var lowerPath = path.ToLowerInvariant();
-                    if (SpineObject.PossibleSuffixMapping.Keys.Any(lowerPath.EndsWith))
-                        validPaths.Add(path);
-                }
-                else if (Directory.Exists(path))
-                {
-                    foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
+                    IReadOnlyList<string> resolved;
+                    try
                     {
-                        var lowerPath = file.ToLowerInvariant();
-                        if (SpineObject.PossibleSuffixMapping.Keys.Any(lowerPath.EndsWith))
-                            validPaths.Add(file);
+                        resolved = SkeletonDirectoryListing.ResolveLoadPaths(input);
                     }
-                }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                    Application.Current?.Dispatcher.InvokeAsync(() => LoadResolvedSkeletonFiles(input, resolved));
+                });
+                return;
             }
 
+            LoadResolvedSkeletonFiles(input, SkeletonDirectoryListing.ResolveLoadPaths(input));
+        }
+
+        private void LoadResolvedSkeletonFiles(string[] input, IReadOnlyList<string> resolved)
+        {
+            if (resolved.Count == 0)
+            {
+                if (input.Any(Directory.Exists))
+                    MessagePopupService.Info(AppResource.Str_NoSkeletonFound);
+                return;
+            }
+
+            var validPaths = resolved.ToList();
             if (validPaths.Count > 1)
             {
                 if (validPaths.Count > 100)
@@ -359,12 +376,27 @@ namespace SpineViewer.ViewModels.Main
                     return;
             }
 
+            RemoveModels(args.Cast<SpineObjectModel>());
+        }
+
+        /// <summary>
+        /// 只卸这一条已加载模型，不看当前多选，也不删除磁盘文件。
+        /// </summary>
+        public void RemoveOnly(SpineObjectModel model)
+        {
+            if (model is null) return;
+            RemoveModels([model]);
+        }
+
+        private void RemoveModels(IEnumerable<SpineObjectModel> models)
+        {
+            var removing = models.Distinct().ToArray();
+            if (removing.Length == 0) return;
             lock (_spineObjectModels.Lock)
             {
-                // NOTE: 这里必须要浅拷贝一次, 不能直接对会被修改的绑定数据 args 进行 foreach 遍历
-                foreach (var sp in args.Cast<SpineObjectModel>().ToArray())
+                foreach (var sp in removing)
                 {
-                    _spineObjectModels.Remove(sp);
+                    if (!_spineObjectModels.Remove(sp)) continue;
                     sp.Dispose();
                 }
             }

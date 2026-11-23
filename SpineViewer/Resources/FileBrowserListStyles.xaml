@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+      必须基于 HandyControl 的条目样式。单独写 ItemContainerStyle 会丢掉暗色前景，
+      文件夹名会落回系统黑色，叠在深灰底上就看不见。
+      最近一次选择的浅蓝直接写在正文 TextBlock 上，不靠父级 Foreground 继承。
+    -->
+    <Style x:Key="FileBrowserItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Padding" Value="2,1"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="#12324F"/>
+                <Setter Property="BorderBrush" Value="#8ECAFF"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="FileBrowserItemTemplate">
+        <TextBlock Text="{Binding Name}" VerticalAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLastChosen}" Value="True">
+                            <Setter Property="Foreground" Value="#8ECAFF"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </DataTemplate>
+</ResourceDictionary>

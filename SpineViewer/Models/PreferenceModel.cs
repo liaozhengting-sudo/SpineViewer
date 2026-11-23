@@ -44,7 +44,7 @@ namespace SpineViewer.Models
         private bool _isShown = true;
 
         [ObservableProperty]
-        private bool _usePma;
+        private bool _usePma = true;
 
         [ObservableProperty]
         private bool _debugTexture = true;

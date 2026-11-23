@@ -76,6 +76,17 @@ namespace SpineViewer.ViewModels.Main
         private readonly object _bgLock = new();
 
         /// <summary>
+        /// 预览用棋盘格。只在预览渲染线程、当前 OpenGL 上下文里创建。
+        /// </summary>
+        private const uint CheckerboardCellSize = 16;
+        private static readonly SFML.Graphics.Color CheckerboardLight = new(204, 204, 204);
+        private static readonly SFML.Graphics.Color CheckerboardDark = new(153, 153, 153);
+        private SFML.Graphics.Texture? _checkerboardTexture; // XXX: 暂时未使用 Dispose 释放
+        private SFML.Graphics.Sprite? _checkerboardSprite; // XXX: 暂时未使用 Dispose 释放
+        private bool _checkerboardInitFailed;
+        private SFML.Graphics.Color _appliedAxisVertexColor = SFML.Graphics.Color.White;
+
+        /// <summary>
         /// 用于导出时可选包含背景, 不可长期持有或释放该对象
         /// </summary>
         internal SFML.Graphics.Sprite? BackgroundImageSprite { get => _backgroundImageSprite; }
@@ -205,7 +216,7 @@ namespace SpineViewer.ViewModels.Main
             get => _speed;
             set => SetProperty(ref _speed, Math.Clamp(value, 0.01f, 100f));
         }
-        private float _speed = 1f;
+        private float _speed = 0.77f;
 
         public bool ShowAxis
         {
@@ -213,6 +224,17 @@ namespace SpineViewer.ViewModels.Main
             set => SetProperty(ref _showAxis, value);
         }
         private bool _showAxis = true;
+
+        /// <summary>
+        /// 预览画面和模型预览图用棋盘格表示透明。关闭后预览画面回到纯色。
+        /// 不作用于导出，也不作用于桌面投影。
+        /// </summary>
+        public bool UseCheckerboardBackground
+        {
+            get => _useCheckerboardBackground;
+            set => SetProperty(ref _useCheckerboardBackground, value);
+        }
+        private bool _useCheckerboardBackground = true;
 
         public Color BackgroundColor
         {
@@ -377,6 +399,54 @@ namespace SpineViewer.ViewModels.Main
         });
         private RelayCommand? _cmd_ResetView;
 
+        /// <summary>
+        /// 进度条只跟随轨道 0。更高轨道保持各自的时间。
+        /// </summary>
+        private const int PlaybackTrackIndex = 0;
+        private const float PlaybackEpsilon = 0.0005f;
+
+        private float _playbackPosition;
+        private float _playbackDuration;
+        private bool _canScrub;
+        private bool _suppressSeek;
+        private volatile bool _playbackScrubbing;
+        private bool _playbackPublishQueued;
+
+        public float PlaybackPosition
+        {
+            get => _playbackPosition;
+            set
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value)) return;
+                if (value < 0) value = 0;
+                if (_playbackDuration > 0 && value > _playbackDuration) value = _playbackDuration;
+                if (!SetProperty(ref _playbackPosition, value)) return;
+                OnPropertyChanged(nameof(PlaybackTimeText));
+                if (_suppressSeek || !_canScrub) return;
+                SeekShownTrack0(value);
+            }
+        }
+
+        public float PlaybackDuration => _playbackDuration;
+
+        /// <summary>
+        /// 滑块最大值。没有动画时保持 1，避免 Maximum 小于 Minimum。
+        /// </summary>
+        public float PlaybackSliderMaximum => _playbackDuration > PlaybackEpsilon ? _playbackDuration : 1f;
+
+        public bool CanScrub => _canScrub;
+
+        public string PlaybackTimeText => $"{_playbackPosition:0.00} / {(_canScrub ? _playbackDuration : 0f):0.00}";
+
+        public void BeginPlaybackScrub() => _playbackScrubbing = true;
+
+        public void EndPlaybackScrub()
+        {
+            if (!_playbackScrubbing) return;
+            if (_canScrub) SeekShownTrack0(_playbackPosition);
+            _playbackScrubbing = false;
+        }
+
         public void CanvasMouseWheelScrolled(object? s, SFML.Window.MouseWheelScrollEventArgs e)
         {
             float delta = (Keyboard.Modifiers & ModifierKeys.Shift) == 0 ? 0.1f : 0.01f;
@@ -517,9 +587,19 @@ namespace SpineViewer.ViewModels.Main
         {
             IsUpdating = false;
             if (_cancelToken is null || _renderTask is null || _wallpaperRenderTask is null) return;
+            _logger.Info("Stopping render tasks");
             _cancelToken.Cancel();
-            _wallpaperRenderTask.Wait();
-            _renderTask.Wait();
+            // 渲染线程若卡在锁或原生调用里，无限等待会让关闭也停住。超时后继续关闭进程。
+            try
+            {
+                var stopped = Task.WaitAll([_wallpaperRenderTask, _renderTask], TimeSpan.FromSeconds(3));
+                if (!stopped)
+                    _logger.Warn("Render tasks were still running after 3 seconds; continue closing");
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn("Render tasks ended with an error while closing: {0}", ex.Message);
+            }
             _wallpaperRenderTask = null;
             _renderTask = null;
             _cancelToken = null;
@@ -573,8 +653,9 @@ namespace SpineViewer.ViewModels.Main
                 OnPropertyChanged(nameof(WallpaperRealTimeFps));
             }
 
-            // 停止更新的时候只是时间不前进, 但是坐标变换还是要更新, 否则无法移动对象
-            if (!_isUpdating) delta = 0;
+            // 停止更新的时候只是时间不前进, 但是坐标变换还是要更新, 否则无法移动对象。
+            // 拖动进度条时同样冻结时间，松手后从拖到的位置继续。
+            if (!_isUpdating || _playbackScrubbing) delta = 0;
 
             // 加上要快进的量
             lock (_forwardDeltaLock)
@@ -620,6 +701,8 @@ namespace SpineViewer.ViewModels.Main
                 }
             }
 
+            PublishPlaybackProgress();
+
             // 更新背景图位置和缩放
             lock (_bgLock)
             {
@@ -652,6 +735,203 @@ namespace SpineViewer.ViewModels.Main
             }
         }
 
+        /// <summary>
+        /// 采样轨道 0 的播放位置。拖动滑块期间不回写，避免进度更新把滑块拽回去。
+        /// </summary>
+        private void PublishPlaybackProgress()
+        {
+            if (_playbackScrubbing) return;
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null) return;
+            if (dispatcher.CheckAccess())
+            {
+                var sample = ReadPrimaryTrack0();
+                ApplyPlaybackSample(sample.time, sample.duration);
+                return;
+            }
+            if (_playbackPublishQueued) return;
+            _playbackPublishQueued = true;
+            dispatcher.InvokeAsync(new Action(() =>
+            {
+                _playbackPublishQueued = false;
+                if (_playbackScrubbing) return;
+                var sample = ReadPrimaryTrack0();
+                ApplyPlaybackSample(sample.time, sample.duration);
+            }));
+        }
+
+        private void ApplyPlaybackSample(float time, float duration)
+        {
+            if (_playbackScrubbing) return;
+            var canScrub = duration > PlaybackEpsilon;
+            if (!canScrub)
+            {
+                time = 0;
+                duration = 0;
+            }
+            if (_canScrub == canScrub
+                && Math.Abs(_playbackDuration - duration) < PlaybackEpsilon
+                && Math.Abs(_playbackPosition - time) < PlaybackEpsilon)
+                return;
+
+            _suppressSeek = true;
+            try
+            {
+                if (SetProperty(ref _playbackDuration, duration, nameof(PlaybackDuration)))
+                {
+                    OnPropertyChanged(nameof(PlaybackSliderMaximum));
+                    OnPropertyChanged(nameof(PlaybackTimeText));
+                }
+                if (SetProperty(ref _canScrub, canScrub, nameof(CanScrub)))
+                    OnPropertyChanged(nameof(PlaybackTimeText));
+                if (SetProperty(ref _playbackPosition, time, nameof(PlaybackPosition)))
+                    OnPropertyChanged(nameof(PlaybackTimeText));
+            }
+            finally
+            {
+                _suppressSeek = false;
+            }
+        }
+
+        /// <summary>
+        /// 优先用选中且显示的模型，否则用第一个显示的模型。只看轨道 0。
+        /// </summary>
+        private (float time, float duration) ReadPrimaryTrack0()
+        {
+            lock (_models.Lock)
+            {
+                SpineObjectModel? primary = null;
+                foreach (var sp in _models)
+                {
+                    if (!sp.IsShown || !sp.IsSelected) continue;
+                    if (sp.TryGetTrackPlayback(PlaybackTrackIndex, out _, out _))
+                    {
+                        primary = sp;
+                        break;
+                    }
+                }
+                if (primary is null)
+                {
+                    foreach (var sp in _models)
+                    {
+                        if (!sp.IsShown) continue;
+                        if (sp.TryGetTrackPlayback(PlaybackTrackIndex, out _, out _))
+                        {
+                            primary = sp;
+                            break;
+                        }
+                    }
+                }
+                if (primary is null || !primary.TryGetTrackPlayback(PlaybackTrackIndex, out var time, out var duration))
+                    return (0, 0);
+                return (time, duration);
+            }
+        }
+
+        private void SeekShownTrack0(float time)
+        {
+            lock (_models.Lock)
+            {
+                foreach (var sp in _models)
+                {
+                    if (!sp.IsShown) continue;
+                    sp.SeekTrack(PlaybackTrackIndex, time);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 在屏幕空间铺一层不透明棋盘格，并恢复世界视区。
+        /// 格子不随缩放、平移、旋转变化，用来表示预览里的透明区域。
+        /// </summary>
+        private bool DrawCheckerboard(ISFMLRenderer renderer)
+        {
+            if (!EnsureCheckerboardSprite())
+                return false;
+
+            var resolution = renderer.Resolution;
+            if (resolution.X == 0 || resolution.Y == 0 || resolution.X > int.MaxValue || resolution.Y > int.MaxValue)
+                return false;
+
+            // 先清成不透明深灰，保证帧缓冲 Alpha 为 255，预乘混合才和纯色背景一致。
+            renderer.Clear(CheckerboardDark);
+
+            // GetView 返回的是窗口内部视区的别名，不是副本。
+            // SetView 会改写这块内部数据，所以必须先复制，否则翻转、缩放和平移会在这一帧丢失。
+            using var liveView = renderer.GetView();
+            using var worldView = new SFML.Graphics.View(liveView);
+            using var screenView = new SFML.Graphics.View(new SFML.Graphics.FloatRect(0, 0, resolution.X, resolution.Y));
+            renderer.SetView(screenView);
+            try
+            {
+                _checkerboardSprite!.TextureRect = new SFML.Graphics.IntRect(0, 0, (int)resolution.X, (int)resolution.Y);
+                renderer.Draw(_checkerboardSprite);
+                return true;
+            }
+            finally
+            {
+                renderer.SetView(worldView);
+            }
+        }
+
+        private bool EnsureCheckerboardSprite()
+        {
+            if (_checkerboardSprite is not null)
+                return true;
+            if (_checkerboardInitFailed)
+                return false;
+
+            try
+            {
+                const uint size = CheckerboardCellSize * 2;
+                using var image = new SFML.Graphics.Image(size, size, CheckerboardDark);
+                for (uint y = 0; y < size; y++)
+                {
+                    for (uint x = 0; x < size; x++)
+                    {
+                        var cellX = x / CheckerboardCellSize;
+                        var cellY = y / CheckerboardCellSize;
+                        if (((cellX + cellY) & 1) == 0)
+                            image.SetPixel(x, y, CheckerboardLight);
+                    }
+                }
+
+                _checkerboardTexture = new SFML.Graphics.Texture(image, false)
+                {
+                    Repeated = true,
+                    Smooth = false,
+                };
+                _checkerboardSprite = new SFML.Graphics.Sprite(_checkerboardTexture);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _checkerboardInitFailed = true;
+                _logger.Debug(ex.ToString());
+                _logger.Error("Failed to create checkerboard background, {0}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 棋盘格较亮，坐标轴改用黑色。关闭棋盘格时恢复原来的白色坐标轴。
+        /// </summary>
+        private void SyncAxisVertexColor()
+        {
+            var color = _useCheckerboardBackground ? SFML.Graphics.Color.Black : SFML.Graphics.Color.White;
+            if (color.R == _appliedAxisVertexColor.R
+                && color.G == _appliedAxisVertexColor.G
+                && color.B == _appliedAxisVertexColor.B
+                && color.A == _appliedAxisVertexColor.A)
+                return;
+
+            _appliedAxisVertexColor = color;
+            _axisVertices[0] = new(new(-1e9f, 0), color);
+            _axisVertices[1] = new(new(1e9f, 0), color);
+            _axisVertices[2] = new(new(0, -1e9f), color);
+            _axisVertices[3] = new(new(0, 1e9f), color);
+        }
+
         private void UpdateRenderFrame()
         {
             if (!_vmMain.IsVisible)
@@ -661,8 +941,12 @@ namespace SpineViewer.ViewModels.Main
                 return;
             }
 
-            // 清除背景
-            _renderer.Clear(_backgroundColor);
+            // 预览背景。棋盘格是不透明像素，模型仍按原有预乘混合叠上去。
+            // 画不上时退回纯色，避免留下未清除的画面。
+            if (!_useCheckerboardBackground || !DrawCheckerboard(_renderer))
+                _renderer.Clear(_backgroundColor);
+
+            SyncAxisVertexColor();
 
             // 渲染背景
             lock (_bgLock)
@@ -809,6 +1093,7 @@ namespace SpineViewer.ViewModels.Main
                     FlipY = FlipY,
                     Speed = Speed,
                     ShowAxis = ShowAxis,
+                    UseCheckerboardBackground = UseCheckerboardBackground,
                     BackgroundColor = BackgroundColor,
                     BackgroundImagePath = BackgroundImagePath,
                     BackgroundImageMode = BackgroundImageMode,
@@ -825,6 +1110,7 @@ namespace SpineViewer.ViewModels.Main
                 FlipY = value.FlipY;
                 Speed = value.Speed;
                 ShowAxis = value.ShowAxis;
+                UseCheckerboardBackground = value.UseCheckerboardBackground;
                 BackgroundColor = value.BackgroundColor;
                 BackgroundImagePath = value.BackgroundImagePath;
                 BackgroundImageMode = value.BackgroundImageMode;

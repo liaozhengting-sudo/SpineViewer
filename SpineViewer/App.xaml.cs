@@ -406,7 +406,7 @@ namespace SpineViewer
                 }
             }
         }
-        private static AppSkin _skin = AppSkin.Light;
+        private static AppSkin _skin = AppSkin.Dark;
 
         /// <summary>
         /// 程序网络代理地址, null 则使用系统代理

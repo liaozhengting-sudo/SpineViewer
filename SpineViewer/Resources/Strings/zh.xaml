@@ -46,6 +46,10 @@
     <s:String x:Key="Str_AddSpineObjectFromClipboard">从剪贴板添加</s:String>
     <s:String x:Key="Str_AddSpineObjectsTitle">批量添加骨骼文件</s:String>
     <s:String x:Key="Str_RemoveSpineObject">移除</s:String>
+    <s:String x:Key="Str_RemoveSelectedModels">移除所选模型</s:String>
+    <s:String x:Key="Str_RemoveSelectedModelsTooltip">从预览和左侧列表移除选中的模型，不删除磁盘上的文件。可按住 Ctrl 或 Shift 多选。</s:String>
+    <s:String x:Key="Str_RemoveThisModel">移除</s:String>
+    <s:String x:Key="Str_RemoveThisModelTooltip">只把这一条从预览卸下，不删除磁盘上的文件，也不影响其它已选模型。</s:String>
     <s:String x:Key="Str_RemoveAllSpineObject">移除全部</s:String>
     <s:String x:Key="Str_Reload">重新加载</s:String>
     <s:String x:Key="Str_ReloadSpineObjectsTitle">重新加载骨骼文件</s:String>
@@ -141,6 +145,8 @@
     <s:String x:Key="Str_LogHitSlots">输出命中检测结果的插槽名称</s:String>
     <s:String x:Key="Str_LogHitSlotsTooltip">启用后将会在日志框内输出每一次点击操作命中的模型和插槽情况</s:String>
     <s:String x:Key="Str_ShowAxis">显示坐标轴</s:String>
+    <s:String x:Key="Str_CheckerboardBackground">棋盘格背景</s:String>
+    <s:String x:Key="Str_CheckerboardBackgroundTooltip">开启后，预览画面和模型预览图用棋盘格表示透明区域。关闭后，预览画面使用下方纯色，预览图使用深色底。背景图片仍会叠在棋盘格之上。导出和桌面投影始终使用纯色，不会变成棋盘格或透明窗口。</s:String>
     <s:String x:Key="Str_BackgroundColor">背景颜色</s:String>
     <s:String x:Key="Str_BackgroundImagePath">背景图片路径</s:String>
     <s:String x:Key="Str_BackgroundImageMode">背景图片模式</s:String>
@@ -187,10 +193,27 @@
     <s:String x:Key="Str_StopTooltip">停止</s:String>
     <s:String x:Key="Str_RestartTooltip">重头开始播放</s:String>
     <s:String x:Key="Str_PlayPauseTooltip">播放/暂停</s:String>
+    <s:String x:Key="Str_PlaybackProgressTooltip">轨道 0 的播放进度，显示当前时间 / 动画时长（秒）。可拖动跳转，暂停时也可以拖。有选中且正在显示的模型时以它为准，否则用第一个显示的模型。拖动会把所有显示中模型的轨道 0 跳到该时间，其它轨道不变。松开后若正在播放，会从该位置继续。</s:String>
     <s:String x:Key="Str_ForwardStepTooltip">快进 1 帧</s:String>
     <s:String x:Key="Str_ForwardFastTooltip">快进 10 帧</s:String>
     <s:String x:Key="Str_FullScreenTooltip">窗口/全屏; F11</s:String>
     <s:String x:Key="Str_ResetViewTooltip">重置视区位置与缩放; Ctrl+0</s:String>
+    <s:String x:Key="Str_FileSidebarTooltip">收起或展开文件栏。文件栏只浏览当前文件夹，不会盖住预览画面。</s:String>
+    <s:String x:Key="Str_FileSidebarOpen">打开</s:String>
+    <s:String x:Key="Str_FileSidebarOpenTooltip">选择要浏览的文件夹</s:String>
+    <s:String x:Key="Str_FileSidebarUp">上级</s:String>
+    <s:String x:Key="Str_FileSidebarRefresh">刷新</s:String>
+    <s:String x:Key="Str_FileSidebarLoad">加载</s:String>
+    <s:String x:Key="Str_FileSidebarLoadTooltip">加载选中的骨骼文件。双击文件也会加载。把文件拖到左侧模型列表即可加入预览。拖文件夹到本栏只是打开该文件夹。</s:String>
+    <s:String x:Key="Str_FileSidebarGo">转到</s:String>
+    <s:String x:Key="Str_FileSidebarGoTooltip">按地址栏路径打开。也可以在地址栏按回车。</s:String>
+    <s:String x:Key="Str_FileSidebarStatus">子文件夹 {0} 个，骨骼文件 {1} 个。atlas 和图片不列出。</s:String>
+    <s:String x:Key="Str_FileSidebarEmpty">这里没有子文件夹，也没有 skel、skel.bytes 或 json。atlas 和图片不会显示。</s:String>
+    <s:String x:Key="Str_FileSidebarNotFound">找不到这个路径：{0}</s:String>
+    <s:String x:Key="Str_FileSidebarAccessDenied">没有权限读取这个文件夹：{0}。{1}</s:String>
+    <s:String x:Key="Str_FileSidebarReadError">无法读取这个文件夹：{0}。{1}</s:String>
+    <s:String x:Key="Str_NoSkeletonFound">这个文件夹里没有找到可打开的骨骼文件。</s:String>
+    <s:String x:Key="Str_FolderDropHint">可按住 Ctrl 或 Shift 多选文件夹和骨骼文件，一起拖到这里或左侧模型列表。不用点进去再拖 json。双击文件夹仍是进入该文件夹。</s:String>
     
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">清除日志</s:String>

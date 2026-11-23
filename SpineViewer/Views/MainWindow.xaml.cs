@@ -2,6 +2,7 @@
 using Octokit;
 using SFMLRenderer;
 using Spine;
+using Spine.Utils;
 using SpineViewer.Extensions;
 using SpineViewer.Models;
 using SpineViewer.Natives;
@@ -42,6 +43,12 @@ public partial class MainWindow : Window
     private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
     private ListViewItem? _listViewDragSourceItem = null;
+    private Point _fileBrowserDragStart;
+    private FileBrowserEntry? _fileBrowserDragEntry;
+    private bool _fileBrowserDragStarted;
+    private bool _fileBrowserHoldSelection;
+    private GridLength _fileSidebarExpandedWidth = new(280);
+    private bool _fileSidebarCollapsed;
     private Point _listViewDragSourcePoint;
 
     private readonly SFMLRenderWindow _wallpaperRenderWindow;
@@ -110,6 +117,8 @@ public partial class MainWindow : Window
         User32.SetWindowLong(handle, User32.GWL_EXSTYLE, exStyle);
 
         DataContext = _vm = new(_renderPanel, _wallpaperRenderWindow);
+        _playbackSlider.AddHandler(Thumb.DragStartedEvent, new DragStartedEventHandler(PlaybackSlider_DragStarted));
+        _playbackSlider.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(PlaybackSlider_DragCompleted));
 
         // XXX: hc 的 NotifyIcon 的 Text 似乎没法双向绑定
         _notifyIcon.Text = _vm.Title;
@@ -225,6 +234,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
+        _logger.Info("Main window closing");
         if (!_vm.IsShuttingDownFromTray)
         {
             if (_vm.CloseToTray is true)
@@ -289,9 +299,16 @@ public partial class MainWindow : Window
             _rightPanelGrid.RowDefinitions[0].Height = new(m.RightPanelGridRow0Height, GridUnitType.Star);
             _rightPanelGrid.RowDefinitions[2].Height = new(m.RightPanelGridRow2Height, GridUnitType.Star);
 
+            if (m.FileSidebarWidth >= 80)
+                _fileSidebarExpandedWidth = new GridLength(m.FileSidebarWidth);
+            SetFileSidebarCollapsed(m.FileSidebarCollapsed);
+            if (!string.IsNullOrWhiteSpace(m.FileBrowserDirectory))
+                _vm.FileBrowserViewModel.OpenDirectory(m.FileBrowserDirectory);
+
             _vm.SFMLRendererViewModel.SetResolution(m.ResolutionX, m.ResolutionY);
             _vm.SFMLRendererViewModel.Speed = m.Speed;
             _vm.SFMLRendererViewModel.ShowAxis = m.ShowAxis;
+            _vm.SFMLRendererViewModel.UseCheckerboardBackground = m.UseCheckerboardBackground;
             _vm.SFMLRendererViewModel.BackgroundColor = m.BackgroundColor;
             _vm.SFMLRendererViewModel.BackgroundImageMode = m.BackgroundImageMode;
         }
@@ -323,11 +340,15 @@ public partial class MainWindow : Window
 
             RightPanelGridRow0Height = _rightPanelGrid.RowDefinitions[0].Height.Value,
             RightPanelGridRow2Height = _rightPanelGrid.RowDefinitions[2].Height.Value,
+            FileSidebarCollapsed = _fileSidebarCollapsed,
+            FileSidebarWidth = _fileSidebarCollapsed ? _fileSidebarExpandedWidth.Value : _rootGrid.ColumnDefinitions[4].Width.Value,
+            FileBrowserDirectory = _vm.FileBrowserViewModel.CurrentDirectory,
 
             ResolutionX = _vm.SFMLRendererViewModel.ResolutionX,
             ResolutionY = _vm.SFMLRendererViewModel.ResolutionY,
             Speed = _vm.SFMLRendererViewModel.Speed,
             ShowAxis = _vm.SFMLRendererViewModel.ShowAxis,
+            UseCheckerboardBackground = _vm.SFMLRendererViewModel.UseCheckerboardBackground,
             BackgroundColor = _vm.SFMLRendererViewModel.BackgroundColor,
             BackgroundImageMode = _vm.SFMLRendererViewModel.BackgroundImageMode,
         };
@@ -382,6 +403,7 @@ public partial class MainWindow : Window
 
         _userStateWatchers.Add(PropertyWatcher.Watch(_rightPanelGrid.RowDefinitions[0], RowDefinition.HeightProperty, DelayedSaveUserState));
         _userStateWatchers.Add(PropertyWatcher.Watch(_rightPanelGrid.RowDefinitions[2], RowDefinition.HeightProperty, DelayedSaveUserState));
+        _userStateWatchers.Add(PropertyWatcher.Watch(_rootGrid.ColumnDefinitions[4], ColumnDefinition.WidthProperty, DelayedSaveUserState));
 
         _vm.SFMLRendererViewModel.PropertyChanged += SFMLRendererUserStateChanged;
     }
@@ -403,6 +425,7 @@ public partial class MainWindow : Window
             case nameof(SFMLRendererViewModel.ResolutionY):
             case nameof(SFMLRendererViewModel.Speed):
             case nameof(SFMLRendererViewModel.ShowAxis):
+            case nameof(SFMLRendererViewModel.UseCheckerboardBackground):
             case nameof(SFMLRendererViewModel.BackgroundColor):
             case nameof(SFMLRendererViewModel.BackgroundImageMode):
                 DelayedSaveUserState();
@@ -415,6 +438,16 @@ public partial class MainWindow : Window
     #endregion
 
     #region ColorPicker 弹窗事件处理
+
+    private void PlaybackSlider_DragStarted(object sender, DragStartedEventArgs e)
+    {
+        _vm.SFMLRendererViewModel.BeginPlaybackScrub();
+    }
+
+    private void PlaybackSlider_DragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        _vm.SFMLRendererViewModel.EndPlaybackScrub();
+    }
 
     private void ButtonPickColor_Click(object sender, RoutedEventArgs e)
     {
@@ -620,6 +653,202 @@ public partial class MainWindow : Window
             vm.AddSpineObjectFromFileList((string[])paths);
         }
         e.Handled = true;
+    }
+
+    private void FileSidebarToggle_Click(object sender, RoutedEventArgs e)
+    {
+        SetFileSidebarCollapsed(!_fileSidebarCollapsed);
+        DelayedSaveUserState();
+    }
+
+    private void SetFileSidebarCollapsed(bool collapsed)
+    {
+        if (collapsed)
+        {
+            if (!_fileSidebarCollapsed && _rootGrid.ColumnDefinitions[4].Width.Value >= 80)
+                _fileSidebarExpandedWidth = _rootGrid.ColumnDefinitions[4].Width;
+            _fileSidebarCollapsed = true;
+            _rootGrid.ColumnDefinitions[4].Width = new GridLength(28);
+            _fileSidebarSplitter.Width = 0;
+            _fileBrowserPanel.Visibility = Visibility.Collapsed;
+            _fileSidebarToggleGlyph.Text = "«";
+        }
+        else
+        {
+            _fileSidebarCollapsed = false;
+            var width = _fileSidebarExpandedWidth.Value >= 80 ? _fileSidebarExpandedWidth.Value : 280;
+            _rootGrid.ColumnDefinitions[4].Width = new GridLength(width);
+            _fileSidebarSplitter.Width = 3;
+            _fileBrowserPanel.Visibility = Visibility.Visible;
+            _fileSidebarToggleGlyph.Text = "»";
+        }
+    }
+
+    private void FileSidebar_DragEnter(object sender, DragEventArgs e)
+    {
+        FileSidebar_DragOver(sender, e);
+    }
+
+    private void FileSidebar_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void FileSidebar_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
+            _vm.FileBrowserViewModel.BrowseDropped(paths);
+        e.Handled = true;
+    }
+
+    private void PreviewChrome_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void PreviewChrome_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
+            _vm.SpineObjectListViewModel.AddSpineObjectFromFileList(paths);
+        e.Handled = true;
+    }
+
+    private void FileSidebarLoad_Click(object sender, RoutedEventArgs e)
+    {
+        _vm.FileBrowserViewModel.LoadEntries(_fileBrowserList.SelectedItems.Cast<FileBrowserEntry>());
+    }
+
+    private void FileBrowserList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_fileBrowserDragStarted)
+        {
+            _fileBrowserDragStarted = false;
+            return;
+        }
+        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
+        if (item?.DataContext is not FileBrowserEntry entry)
+            return;
+        if (entry.IsDirectory)
+            _vm.FileBrowserViewModel.OpenDirectory(entry.FullPath);
+        else
+            _vm.SpineObjectListViewModel.AddSpineObjectFromFileList([entry.FullPath]);
+    }
+
+    private void FileSidebarPath_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+        _vm.FileBrowserViewModel.NavigateToInput();
+        e.Handled = true;
+    }
+
+    private void RemoveOneModel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // 先拦住，避免这次点击把多选收成这一行，再把整批选中一起卸掉。
+        e.Handled = true;
+        if (sender is not FrameworkElement element || element.DataContext is not SpineObjectModel model)
+            return;
+        _vm.SpineObjectListViewModel.RemoveOnly(model);
+    }
+
+    private void RememberFileBrowserChoice()
+    {
+        if (_vm.FileBrowserViewModel.SuppressLastChosen)
+            return;
+        var paths = _fileBrowserList.SelectedItems.Cast<FileBrowserEntry>().Select(entry => entry.FullPath).ToArray();
+        _vm.FileBrowserViewModel.ReplaceLastChosen(paths, fromUser: true);
+    }
+
+    private void FileBrowserList_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Up or Key.Down or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.Space))
+            return;
+        RememberFileBrowserChoice();
+    }
+
+    private void FileBrowserList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _fileBrowserDragStarted = false;
+        _fileBrowserHoldSelection = false;
+        _fileBrowserDragStart = e.GetPosition(null);
+        var list = (ListBox)sender;
+        var item = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true);
+        _fileBrowserDragEntry = item?.DataContext as FileBrowserEntry;
+        if (_fileBrowserDragEntry is null)
+            return;
+
+        var modifiers = Keyboard.Modifiers;
+        var keep = SkeletonDirectoryListing.ShouldKeepExistingSelection(
+            (modifiers & ModifierKeys.Control) != 0,
+            (modifiers & ModifierKeys.Shift) != 0,
+            list.SelectedItems.Contains(_fileBrowserDragEntry));
+        if (!keep)
+            return;
+
+        // 已选中的项再按下时，先不要让 ListBox 把其它选择清掉，否则一拖就只剩当前项。
+        _fileBrowserHoldSelection = true;
+        e.Handled = true;
+    }
+
+    private void FileBrowserList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_fileBrowserDragStarted)
+        {
+            _fileBrowserDragStarted = false;
+            _fileBrowserHoldSelection = false;
+            _fileBrowserDragEntry = null;
+            return;
+        }
+
+        var clickedItem = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true) is not null
+            || _fileBrowserDragEntry is not null;
+        if (_fileBrowserHoldSelection && _fileBrowserDragEntry is not null)
+        {
+            _fileBrowserList.SelectedItems.Clear();
+            _fileBrowserList.SelectedItems.Add(_fileBrowserDragEntry);
+        }
+        _fileBrowserHoldSelection = false;
+        _fileBrowserDragEntry = null;
+        if (clickedItem)
+            RememberFileBrowserChoice();
+    }
+
+    private void FileBrowserList_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _fileBrowserDragEntry is null)
+            return;
+
+        var diff = _fileBrowserDragStart - e.GetPosition(null);
+        if (Math.Abs(diff.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+
+        var paths = _fileBrowserList.SelectedItems.Cast<FileBrowserEntry>()
+            .Select(it => it.FullPath)
+            .ToArray();
+        if (paths.Length == 0)
+            paths = [_fileBrowserDragEntry.FullPath];
+
+        _fileBrowserDragEntry = null;
+        _fileBrowserDragStarted = true;
+        RememberFileBrowserChoice();
+        DragDrop.DoDragDrop(_fileBrowserList, new DataObject(DataFormats.FileDrop, paths), DragDropEffects.Copy);
+    }
+
+    private void FileBrowserList_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            _vm.FileBrowserViewModel.LoadEntries(_fileBrowserList.SelectedItems.Cast<FileBrowserEntry>());
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Back)
+        {
+            _vm.FileBrowserViewModel.Cmd_Up.Execute(null);
+            e.Handled = true;
+        }
     }
 
     #endregion

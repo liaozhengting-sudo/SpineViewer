@@ -46,6 +46,10 @@
     <s:String x:Key="Str_AddSpineObjectFromClipboard">Add from Clipboard</s:String>
     <s:String x:Key="Str_AddSpineObjectsTitle">Batch Add Spine Files</s:String>
     <s:String x:Key="Str_RemoveSpineObject">Remove</s:String>
+    <s:String x:Key="Str_RemoveSelectedModels">Remove selected models</s:String>
+    <s:String x:Key="Str_RemoveSelectedModelsTooltip">Removes the selected models from the preview and the list. Files on disk are not deleted. Ctrl or Shift selects more than one.</s:String>
+    <s:String x:Key="Str_RemoveThisModel">Remove</s:String>
+    <s:String x:Key="Str_RemoveThisModelTooltip">Unloads only this model. The file on disk stays, and other selected models stay loaded.</s:String>
     <s:String x:Key="Str_RemoveAllSpineObject">Remove All</s:String>
     <s:String x:Key="Str_Reload">Reload</s:String>
     <s:String x:Key="Str_ReloadSpineObjectsTitle">Reload Spine Files</s:String>
@@ -141,6 +145,8 @@
     <s:String x:Key="Str_LogHitSlots">Output Hit Test Slot Names</s:String>
     <s:String x:Key="Str_LogHitSlotsTooltip">When enabled, the log box will output the model and slot information for each click hit test.</s:String>
     <s:String x:Key="Str_ShowAxis">Show Axis</s:String>
+    <s:String x:Key="Str_CheckerboardBackground">Checkerboard Background</s:String>
+    <s:String x:Key="Str_CheckerboardBackgroundTooltip">When on, the preview and the model preview image use a checkerboard to show transparency. When off, the preview uses the solid color below and the preview image uses a dark background. A background image is still drawn on top. Exports and the desktop wallpaper always use the solid color.</s:String>
     <s:String x:Key="Str_BackgroundColor">Background Color</s:String>
     <s:String x:Key="Str_BackgroundImagePath">Background Image Path</s:String>
     <s:String x:Key="Str_BackgroundImageMode">Background Image Mode</s:String>
@@ -187,10 +193,27 @@
     <s:String x:Key="Str_StopTooltip">Stop</s:String>
     <s:String x:Key="Str_RestartTooltip">Restart Playback</s:String>
     <s:String x:Key="Str_PlayPauseTooltip">Play/Pause</s:String>
+    <s:String x:Key="Str_PlaybackProgressTooltip">Track 0 playback position, current time / animation duration in seconds. Drag to seek, including while paused. Uses the selected visible model, or the first visible model. Seeking moves track 0 of every visible model and leaves other tracks unchanged. If playback is running, it continues from the new position after release.</s:String>
     <s:String x:Key="Str_ForwardStepTooltip">Forward 1 Frame</s:String>
     <s:String x:Key="Str_ForwardFastTooltip">Forward 10 Frames</s:String>
     <s:String x:Key="Str_FullScreenTooltip">Window/Fullscreen; F11</s:String>
     <s:String x:Key="Str_ResetViewTooltip">Reset view to default position and zoom; Ctrl+0</s:String>
+    <s:String x:Key="Str_FileSidebarTooltip">Collapse or expand the file sidebar. It browses only the current folder and does not cover the preview.</s:String>
+    <s:String x:Key="Str_FileSidebarOpen">Open</s:String>
+    <s:String x:Key="Str_FileSidebarOpenTooltip">Choose a folder to browse</s:String>
+    <s:String x:Key="Str_FileSidebarUp">Up</s:String>
+    <s:String x:Key="Str_FileSidebarRefresh">Refresh</s:String>
+    <s:String x:Key="Str_FileSidebarLoad">Load</s:String>
+    <s:String x:Key="Str_FileSidebarLoadTooltip">Load the selected skeleton files. Double-click a file to load it. Drag files onto the model list to add them to the preview. Dropping a folder here only opens that folder.</s:String>
+    <s:String x:Key="Str_FileSidebarGo">Go</s:String>
+    <s:String x:Key="Str_FileSidebarGoTooltip">Open the path in the address box. Enter does the same.</s:String>
+    <s:String x:Key="Str_FileSidebarStatus">{0} folders, {1} skeleton files. Atlas and image files are hidden.</s:String>
+    <s:String x:Key="Str_FileSidebarEmpty">No subfolders and no skel, skel.bytes, or json files. Atlas and image files are hidden.</s:String>
+    <s:String x:Key="Str_FileSidebarNotFound">Path not found: {0}</s:String>
+    <s:String x:Key="Str_FileSidebarAccessDenied">Cannot read this folder (access denied): {0}. {1}</s:String>
+    <s:String x:Key="Str_FileSidebarReadError">Cannot read this folder: {0}. {1}</s:String>
+    <s:String x:Key="Str_NoSkeletonFound">No skeleton file this viewer can open was found in that folder.</s:String>
+    <s:String x:Key="Str_FolderDropHint">Ctrl or Shift to select several folders and skeleton files, then drag them here or onto the model list. Double-click a folder to open it.</s:String>
 
     <!-- 日志框 -->
     <s:String x:Key="Str_ClearLog">Clear Log</s:String>

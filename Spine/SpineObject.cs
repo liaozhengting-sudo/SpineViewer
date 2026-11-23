@@ -26,6 +26,14 @@ namespace Spine
         }.ToFrozenDictionary();
 
         /// <summary>
+        /// 是否是可加载的骨骼文件。不把 atlas、图片等伴随文件当成模型。
+        /// </summary>
+        public static bool IsPossibleSkeletonFile(string? path)
+        {
+            return Utils.SkeletonDirectoryListing.MatchSkeletonSuffix(path) is not null;
+        }
+
+        /// <summary>
         /// 日志器
         /// </summary>
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
@@ -374,6 +382,21 @@ namespace Spine
                 skin.AddSkin(_data.SkinsByName[name]);
             _skeleton.SetSlotsToSetupPose();
             _skeleton.UpdateCache();
+        }
+
+        /// <summary>
+        /// 换掉或清掉某一条轨道后，让没被当前轨道打关键帧的槽位回到 Setup，再立刻套用剩下的轨道。
+        /// 不清除其它轨道，也不每帧重置。
+        /// </summary>
+        public void ReleaseUnkeyedSlotPose(ITrackEntry? replaced)
+        {
+            if (replaced is not null)
+            {
+                replaced.MixDuration = 0;
+                TrackMixCut.DetachOutgoing(replaced);
+            }
+            _skeleton.SetSlotsToSetupPose();
+            Update(0);
         }
 
         /// <summary>
