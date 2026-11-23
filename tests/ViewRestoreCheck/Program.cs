@@ -145,38 +145,31 @@ failed |= Expect("播放进度条仍可拖动并双向绑定", xaml.Contains("x:
 failed |= Expect("播放进度条比原来更矮", xaml.Contains("<Slider x:Name=\"_playbackSlider\"", StringComparison.Ordinal) && xaml.Contains("Height=\"16\"", StringComparison.Ordinal));
 var windowCode = File.ReadAllText(FindUp("SpineViewer", "Views", "MainWindow.xaml.cs"));
 failed |= Expect("拖动进度条仍会暂停回写并在松开后结束", windowCode.Contains("BeginPlaybackScrub()", StringComparison.Ordinal) && windowCode.Contains("EndPlaybackScrub()", StringComparison.Ordinal));
-failed |= Expect("保存用户状态同时留下速度和访问过的文件夹", windowCode.Contains("Speed = _vm.SFMLRendererViewModel.Speed", StringComparison.Ordinal) && windowCode.Contains("VisitedDirectories = _vm.FileBrowserViewModel.VisitedPaths.ToList()", StringComparison.Ordinal));
+failed |= Expect("保存用户状态仍留下速度但不写访问历史", windowCode.Contains("Speed = _vm.SFMLRendererViewModel.Speed", StringComparison.Ordinal) && !windowCode.Contains("VisitedDirectories", StringComparison.Ordinal));
 var loadAt = windowCode.IndexOf("private void LoadUserState", StringComparison.Ordinal);
 var saveAt = windowCode.IndexOf("private void SaveUserState", StringComparison.Ordinal);
 var loadBody = loadAt >= 0 && saveAt > loadAt ? windowCode.Substring(loadAt, saveAt - loadAt) : "";
-failed |= Expect("启动时恢复访问过的文件夹而不自动加载", loadBody.Contains("ReplaceVisited(m.VisitedDirectories)", StringComparison.Ordinal));
-failed |= Expect("侧栏不再有独立的最近打开列表", !xaml.Contains("_recentFilesList", StringComparison.Ordinal) && !xaml.Contains("Str_RecentOpened", StringComparison.Ordinal));
-failed |= Expect("访问过的文件夹在未选中时改用浅色", xaml.Contains("Binding IsVisited", StringComparison.Ordinal) && xaml.Contains("IsSelected", StringComparison.Ordinal) && xaml.Contains(Spine.Utils.VisitedDirectories.VisitedColorHex, StringComparison.Ordinal));
+failed |= Expect("启动导航不读取旧访问历史", loadBody.Contains("OpenDirectory(m.FileBrowserDirectory)", StringComparison.Ordinal) && !loadBody.Contains("VisitedDirectories", StringComparison.Ordinal) && !loadBody.Contains("ReplaceLastChosen", StringComparison.Ordinal));
+failed |= Expect("侧栏仍是扩展多选", xaml.Contains("SelectionMode=\"Extended\"", StringComparison.Ordinal));
+failed |= Expect("最近选择在失焦或未选中时用浅蓝", xaml.Contains("IsLastChosen", StringComparison.Ordinal) && xaml.Contains("IsKeyboardFocusWithin", StringComparison.Ordinal) && xaml.Contains(Spine.Utils.LastSidebarSelection.ColorHex, StringComparison.Ordinal));
+var browserCode = File.ReadAllText(FindUp("SpineViewer", "ViewModels", "Main", "FileBrowserViewModel.cs"));
+failed |= Expect("刷新列表时不把清空选择当成新标记", browserCode.Contains("SuppressLastChosen = true", StringComparison.Ordinal) && browserCode.Contains("Entries.Clear()", StringComparison.Ordinal));
 
-var folder = Path.Combine(Path.GetTempPath(), "sv-visit-" + Guid.NewGuid().ToString("N"));
-var entered = Spine.Utils.VisitedDirectories.Remember([], folder + Path.DirectorySeparatorChar, true);
-var again = Spine.Utils.VisitedDirectories.Remember(entered, folder.ToUpperInvariant(), true);
-failed |= Expect("成功进入的目录会记下，大小写和末尾斜杠算同一个", entered.Count == 1 && again.Count == 1 && Spine.Utils.VisitedDirectories.Contains(again, folder));
-var failedVisit = Spine.Utils.VisitedDirectories.Remember(again, Path.Combine(folder, "denied"), false);
-failed |= Expect("失败访问不新增标记，刷新也不丢掉已有标记", failedVisit.Count == 1 && Spine.Utils.VisitedDirectories.Contains(failedVisit, folder));
-var parent = Directory.GetParent(folder)!.FullName;
-failed |= Expect("进入子目录不会把父目录一并标上", !Spine.Utils.VisitedDirectories.Contains(entered, parent));
-var nestedFile = Path.Combine(folder, "子", "hero.skel");
-var dropped = Spine.Utils.VisitedDirectories.RememberLoadedFolders([], [folder], [nestedFile]);
-failed |= Expect("拖入文件夹并加载出模型时标这个文件夹", Spine.Utils.VisitedDirectories.Contains(dropped, folder));
-failed |= Expect("拖入加载不会把里面的子文件夹和父目录都标上", !Spine.Utils.VisitedDirectories.Contains(dropped, Path.Combine(folder, "子")) && !Spine.Utils.VisitedDirectories.Contains(dropped, parent));
-var missed = Spine.Utils.VisitedDirectories.RememberLoadedFolders(dropped, [Path.Combine(folder, "空")], []);
-failed |= Expect("文件夹里没有加载出模型时不标", missed.Count == dropped.Count && !Spine.Utils.VisitedDirectories.Contains(missed, Path.Combine(folder, "空")));
-failed |= Expect("未选中的访问过文件夹才改颜色", Spine.Utils.VisitedDirectories.UseVisitedColor(true, true, false) && !Spine.Utils.VisitedDirectories.UseVisitedColor(true, true, true) && !Spine.Utils.VisitedDirectories.UseVisitedColor(false, true, false));
-IReadOnlyList<string> capped = [];
-for (var i = 0; i < Spine.Utils.VisitedDirectories.DefaultCapacity + 5; i++)
-    capped = Spine.Utils.VisitedDirectories.Remember(capped, Path.Combine(folder, "n" + i), true);
-failed |= Expect("访问记录有上限且最新的还在", capped.Count == Spine.Utils.VisitedDirectories.DefaultCapacity && Spine.Utils.VisitedDirectories.Contains(capped, Path.Combine(folder, "n" + (Spine.Utils.VisitedDirectories.DefaultCapacity + 4))));
-var oldState = """{ "Speed": 0.77, "FileBrowserDirectory": "D:\\\\models", "RecentOpenedFiles": [ "D:\\\\models\\\\hero.skel" ] }""";
-failed |= Expect("旧配置没有文件夹记录时得到空列表且不把文件历史当成文件夹", Spine.Utils.VisitedDirectories.ReadFromUserStateJson(oldState).Count == 0 && oldState.Contains("Speed", StringComparison.Ordinal));
-var withVisited = """{ "Speed": 1, "VisitedDirectories": [ "D:\\\\models\\\\", "d:\\\\models" ] }""";
-var readVisited = Spine.Utils.VisitedDirectories.ReadFromUserStateJson(withVisited);
-failed |= Expect("文件夹记录能读回并去重，其它字段还在", readVisited.Count == 1 && withVisited.Contains("\"Speed\": 1", StringComparison.Ordinal));
+var chosenFile = Path.Combine(Path.GetTempPath(), "sv-last-" + Guid.NewGuid().ToString("N"), "hero.skel");
+var chosenDir = Path.Combine(Path.GetTempPath(), "sv-last-dir");
+var pickedFile = Spine.Utils.LastSidebarSelection.Replace([], [chosenFile], true);
+var pickedDir = Spine.Utils.LastSidebarSelection.Replace(pickedFile, [chosenDir + Path.DirectorySeparatorChar], true);
+failed |= Expect("选择文件夹会替换上一个文件标记", pickedDir.Count == 1 && pickedDir[0].Contains("sv-last-dir", StringComparison.OrdinalIgnoreCase) && !pickedDir.Any(p => p.EndsWith("hero.skel", StringComparison.OrdinalIgnoreCase)));
+var batch = Spine.Utils.LastSidebarSelection.Replace(pickedDir, [chosenFile, chosenDir], true);
+failed |= Expect("一次多选同时标记文件和文件夹", batch.Count == 2);
+var replaced = Spine.Utils.LastSidebarSelection.Replace(batch, [chosenFile.ToUpperInvariant()], true);
+failed |= Expect("下一次选择替换整批", replaced.Count == 1 && replaced[0].EndsWith("hero.skel", StringComparison.OrdinalIgnoreCase));
+var kept = Spine.Utils.LastSidebarSelection.Replace(replaced, [], true);
+var ignored = Spine.Utils.LastSidebarSelection.Replace(replaced, [chosenDir], false);
+failed |= Expect("空选择和程序刷新不会丢掉最后一次标记", kept.Count == 1 && ignored.Count == 1 && ignored[0].EndsWith("hero.skel", StringComparison.OrdinalIgnoreCase));
+failed |= Expect("失焦时浅蓝，选中且列表有焦点时不改色", Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, false) && Spine.Utils.LastSidebarSelection.UseMarkColor(true, false, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(false, false, false));
+var oldState = """{ "Speed": 0.77, "VisitedDirectories": [ "D:\\\\models\\\\", "d:\\\\models" ], "RecentOpenedFiles": [ "D:\\\\models\\\\hero.skel" ] }""";
+failed |= Expect("旧访问历史不作为着色来源且其它字段还在", Spine.Utils.LastSidebarSelection.FromSavedState(oldState).Count == 0 && oldState.Contains("\"Speed\": 0.77", StringComparison.Ordinal));
 }
 finally
 {

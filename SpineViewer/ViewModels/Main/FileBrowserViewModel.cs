@@ -23,12 +23,12 @@ namespace SpineViewer.ViewModels.Main
         public bool IsDirectory { get; }
         public bool IsSpineFile => !IsDirectory;
 
-        public bool IsVisited
+        public bool IsLastChosen
         {
-            get => _isVisited;
-            set => SetProperty(ref _isVisited, value);
+            get => _isLastChosen;
+            set => SetProperty(ref _isLastChosen, value);
         }
-        private bool _isVisited;
+        private bool _isLastChosen;
     }
 
     /// <summary>
@@ -46,15 +46,9 @@ namespace SpineViewer.ViewModels.Main
 
         public ObservableCollection<FileBrowserEntry> Entries { get; } = [];
 
-        public event EventHandler? VisitedChanged;
+        public bool SuppressLastChosen { get; private set; }
 
-        private readonly object _recentLock = new();
-        private List<string> _recentPaths = [];
-
-        public IReadOnlyList<string> VisitedPaths
-        {
-            get { lock (_recentLock) return _recentPaths.ToArray(); }
-        }
+        private List<string> _lastChosen = [];
 
         public string? CurrentDirectory
         {
@@ -157,61 +151,16 @@ namespace SpineViewer.ViewModels.Main
             _vmMain.SpineObjectListViewModel.AddSpineObjectFromFileList(paths);
         }
 
-        public void ReplaceVisited(IEnumerable<string>? paths)
+        public void ReplaceLastChosen(IReadOnlyList<string> paths, bool fromUser)
         {
-            ApplyVisited(VisitedDirectories.Remember([], null, false).ToList(), save: false);
-            if (paths is null)
-                return;
-            List<string> next;
-            lock (_recentLock)
-                next = _recentPaths;
-            foreach (var path in paths)
-            {
-                next = VisitedDirectories.Remember(next, path, true).ToList();
-            }
-            ApplyVisited(next, save: false);
+            _lastChosen = LastSidebarSelection.Replace(_lastChosen, paths, fromUser).ToList();
+            UpdateLastChosenFlags();
         }
 
-        public void NoteVisited(string path)
+        private void UpdateLastChosenFlags()
         {
-            List<string> next;
-            lock (_recentLock)
-                next = VisitedDirectories.Remember(_recentPaths, path, true).ToList();
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher is null || dispatcher.CheckAccess())
-                ApplyVisited(next, save: true);
-            else
-                dispatcher.BeginInvoke(new Action(() => ApplyVisited(next, save: true)));
-        }
-
-        public void NoteLoadedFolders(IEnumerable<string> droppedPaths, IEnumerable<string> loadedFiles)
-        {
-            List<string> next;
-            lock (_recentLock)
-                next = VisitedDirectories.RememberLoadedFolders(_recentPaths, droppedPaths, loadedFiles).ToList();
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher is null || dispatcher.CheckAccess())
-                ApplyVisited(next, save: true);
-            else
-                dispatcher.BeginInvoke(new Action(() => ApplyVisited(next, save: true)));
-        }
-
-        private void ApplyVisited(List<string> paths, bool save)
-        {
-            lock (_recentLock)
-                _recentPaths = paths;
-            UpdateVisitedFlags();
-            if (save)
-                VisitedChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void UpdateVisitedFlags()
-        {
-            List<string> visited;
-            lock (_recentLock)
-                visited = _recentPaths.ToList();
             foreach (var entry in Entries)
-                entry.IsVisited = entry.IsDirectory && VisitedDirectories.Contains(visited, entry.FullPath);
+                entry.IsLastChosen = _lastChosen.Any(path => string.Equals(path, LastSidebarSelection.Canonical(entry.FullPath), StringComparison.OrdinalIgnoreCase));
         }
 
         public void OpenDirectory(string path)
@@ -253,15 +202,20 @@ namespace SpineViewer.ViewModels.Main
         {
             if (generation != _listingGeneration)
                 return;
-            Entries.Clear();
-            foreach (var entry in listing.Entries)
-                Entries.Add(new FileBrowserEntry(entry.Name, entry.FullPath, entry.IsDirectory));
+            SuppressLastChosen = true;
+            try
+            {
+                Entries.Clear();
+                foreach (var entry in listing.Entries)
+                    Entries.Add(new FileBrowserEntry(entry.Name, entry.FullPath, entry.IsDirectory));
+            }
+            finally
+            {
+                SuppressLastChosen = false;
+            }
             IsListing = false;
             StatusText = Describe(fullPath, listing);
-            if (listing.Error == SkeletonDirectoryError.None)
-                NoteVisited(fullPath);
-            else
-                UpdateVisitedFlags();
+            UpdateLastChosenFlags();
         }
 
         private static string Describe(string fullPath, SkeletonDirectoryListing listing)

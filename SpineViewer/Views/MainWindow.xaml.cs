@@ -304,7 +304,6 @@ public partial class MainWindow : Window
             SetFileSidebarCollapsed(m.FileSidebarCollapsed);
             if (!string.IsNullOrWhiteSpace(m.FileBrowserDirectory))
                 _vm.FileBrowserViewModel.OpenDirectory(m.FileBrowserDirectory);
-            _vm.FileBrowserViewModel.ReplaceVisited(m.VisitedDirectories);
 
             _vm.SFMLRendererViewModel.SetResolution(m.ResolutionX, m.ResolutionY);
             _vm.SFMLRendererViewModel.Speed = m.Speed;
@@ -344,7 +343,6 @@ public partial class MainWindow : Window
             FileSidebarCollapsed = _fileSidebarCollapsed,
             FileSidebarWidth = _fileSidebarCollapsed ? _fileSidebarExpandedWidth.Value : _rootGrid.ColumnDefinitions[4].Width.Value,
             FileBrowserDirectory = _vm.FileBrowserViewModel.CurrentDirectory,
-            VisitedDirectories = _vm.FileBrowserViewModel.VisitedPaths.ToList(),
 
             ResolutionX = _vm.SFMLRendererViewModel.ResolutionX,
             ResolutionY = _vm.SFMLRendererViewModel.ResolutionY,
@@ -408,19 +406,12 @@ public partial class MainWindow : Window
         _userStateWatchers.Add(PropertyWatcher.Watch(_rootGrid.ColumnDefinitions[4], ColumnDefinition.WidthProperty, DelayedSaveUserState));
 
         _vm.SFMLRendererViewModel.PropertyChanged += SFMLRendererUserStateChanged;
-        _vm.FileBrowserViewModel.VisitedChanged += FileBrowserVisitedChanged;
-    }
-
-    private void FileBrowserVisitedChanged(object? sender, EventArgs e)
-    {
-        DelayedSaveUserState();
     }
 
     private void RemoveUserStateListensers()
     {
         // 撤除所有状态监听器
         _vm.SFMLRendererViewModel.PropertyChanged -= SFMLRendererUserStateChanged;
-        _vm.FileBrowserViewModel.VisitedChanged -= FileBrowserVisitedChanged;
         foreach (var w in _userStateWatchers) w.Dispose();
         _userStateWatchers.Clear();
 
@@ -751,6 +742,14 @@ public partial class MainWindow : Window
             return;
         _vm.FileBrowserViewModel.NavigateToInput();
         e.Handled = true;
+    }
+
+    private void FileBrowserList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm.FileBrowserViewModel.SuppressLastChosen)
+            return;
+        var paths = _fileBrowserList.SelectedItems.Cast<FileBrowserEntry>().Select(entry => entry.FullPath).ToArray();
+        _vm.FileBrowserViewModel.ReplaceLastChosen(paths, fromUser: true);
     }
 
     private void FileBrowserList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
