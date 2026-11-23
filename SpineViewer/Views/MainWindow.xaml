@@ -262,6 +262,17 @@
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
                                                     </GridViewColumn>
+                                                    <GridViewColumn Width="64">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="{DynamicResource Str_RemoveThisModel}"
+                                                                        Padding="6,0"
+                                                                        Focusable="False"
+                                                                        PreviewMouseLeftButtonDown="RemoveOneModel_PreviewMouseLeftButtonDown"
+                                                                        ToolTip="{DynamicResource Str_RemoveThisModelTooltip}"/>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
                                                 </GridView>
                                             </ListView.View>
                                         </ListView>
@@ -1571,54 +1582,21 @@
                                 <ListBox x:Name="_fileBrowserList"
                                          ItemsSource="{Binding Entries}"
                                          SelectionMode="Extended"
+                                         Foreground="{DynamicResource PrimaryTextBrush}"
                                          BorderThickness="1"
                                          HorizontalContentAlignment="Stretch"
                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                                          VirtualizingPanel.IsVirtualizing="True"
                                          VirtualizingPanel.VirtualizationMode="Recycling"
+                                         ItemContainerStyle="{StaticResource FileBrowserItemStyle}"
+                                         ItemTemplate="{StaticResource FileBrowserItemTemplate}"
                                          MouseDoubleClick="FileBrowserList_MouseDoubleClick"
                                          PreviewKeyUp="FileBrowserList_PreviewKeyUp"
                                          PreviewMouseLeftButtonDown="FileBrowserList_PreviewMouseLeftButtonDown"
                                          PreviewMouseLeftButtonUp="FileBrowserList_PreviewMouseLeftButtonUp"
                                          MouseMove="FileBrowserList_MouseMove"
-                                         KeyDown="FileBrowserList_KeyDown">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="2,1"/>
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Style.Triggers>
-                                                <MultiTrigger>
-                                                    <MultiTrigger.Conditions>
-                                                        <Condition Property="IsSelected" Value="True"/>
-                                                        <Condition Property="IsKeyboardFocusWithin" Value="True"/>
-                                                    </MultiTrigger.Conditions>
-                                                    <Setter Property="Background" Value="#24557A"/>
-                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
-                                                </MultiTrigger>
-                                                <MultiDataTrigger>
-                                                    <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding IsLastChosen}" Value="True"/>
-                                                        <Condition Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource Self}}" Value="False"/>
-                                                    </MultiDataTrigger.Conditions>
-                                                    <Setter Property="Foreground" Value="#8ECAFF"/>
-                                                </MultiDataTrigger>
-                                                <MultiDataTrigger>
-                                                    <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding IsLastChosen}" Value="True"/>
-                                                        <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="False"/>
-                                                    </MultiDataTrigger.Conditions>
-                                                    <Setter Property="Foreground" Value="#8ECAFF"/>
-                                                </MultiDataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                         KeyDown="FileBrowserList_KeyDown"/>
                             </DockPanel>
                         </Grid>
                     </Border>

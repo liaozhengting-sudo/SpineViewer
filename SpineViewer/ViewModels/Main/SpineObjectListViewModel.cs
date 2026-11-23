@@ -376,12 +376,27 @@ namespace SpineViewer.ViewModels.Main
                     return;
             }
 
+            RemoveModels(args.Cast<SpineObjectModel>());
+        }
+
+        /// <summary>
+        /// 只卸这一条已加载模型，不看当前多选，也不删除磁盘文件。
+        /// </summary>
+        public void RemoveOnly(SpineObjectModel model)
+        {
+            if (model is null) return;
+            RemoveModels([model]);
+        }
+
+        private void RemoveModels(IEnumerable<SpineObjectModel> models)
+        {
+            var removing = models.Distinct().ToArray();
+            if (removing.Length == 0) return;
             lock (_spineObjectModels.Lock)
             {
-                // NOTE: 这里必须要浅拷贝一次, 不能直接对会被修改的绑定数据 args 进行 foreach 遍历
-                foreach (var sp in args.Cast<SpineObjectModel>().ToArray())
+                foreach (var sp in removing)
                 {
-                    _spineObjectModels.Remove(sp);
+                    if (!_spineObjectModels.Remove(sp)) continue;
                     sp.Dispose();
                 }
             }

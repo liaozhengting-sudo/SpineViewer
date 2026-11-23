@@ -12,6 +12,7 @@
                 <ResourceDictionary Source="/Resources/Strings/zh.xaml"/>
                 <ResourceDictionary Source="/Resources/Skins/dark.xaml"/>
                 <ResourceDictionary Source="/Resources/Theme.xaml"/>
+                <ResourceDictionary Source="/Resources/FileBrowserListStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

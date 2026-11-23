@@ -48,6 +48,8 @@
     <s:String x:Key="Str_RemoveSpineObject">削除</s:String>
     <s:String x:Key="Str_RemoveSelectedModels">選択したモデルを除去</s:String>
     <s:String x:Key="Str_RemoveSelectedModelsTooltip">プレビューと左の一覧から外します。ディスク上のファイルは削除しません。Ctrl または Shift で複数選択できます。</s:String>
+    <s:String x:Key="Str_RemoveThisModel">除去</s:String>
+    <s:String x:Key="Str_RemoveThisModelTooltip">この1件だけをプレビューから外します。ディスク上のファイルは残し、他の選択には影響しません。</s:String>
     <s:String x:Key="Str_RemoveAllSpineObject">すべて削除</s:String>
     <s:String x:Key="Str_Reload">再読み込み</s:String>
     <s:String x:Key="Str_ReloadSpineObjectsTitle">スケルトンファイルの再読み込み</s:String>

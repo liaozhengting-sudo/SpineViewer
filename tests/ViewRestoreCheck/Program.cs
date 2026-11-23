@@ -151,7 +151,8 @@ var saveAt = windowCode.IndexOf("private void SaveUserState", StringComparison.O
 var loadBody = loadAt >= 0 && saveAt > loadAt ? windowCode.Substring(loadAt, saveAt - loadAt) : "";
 failed |= Expect("启动导航不读取旧访问历史", loadBody.Contains("OpenDirectory(m.FileBrowserDirectory)", StringComparison.Ordinal) && !loadBody.Contains("VisitedDirectories", StringComparison.Ordinal) && !loadBody.Contains("ReplaceLastChosen", StringComparison.Ordinal));
 failed |= Expect("侧栏仍是扩展多选", xaml.Contains("SelectionMode=\"Extended\"", StringComparison.Ordinal));
-failed |= Expect("最近选择在失焦或未选中时用浅蓝", xaml.Contains("IsLastChosen", StringComparison.Ordinal) && xaml.Contains("IsKeyboardFocusWithin", StringComparison.Ordinal) && xaml.Contains(Spine.Utils.LastSidebarSelection.ColorHex, StringComparison.Ordinal));
+var browserStyle = File.ReadAllText(FindUp("SpineViewer", "Resources", "FileBrowserListStyles.xaml"));
+failed |= Expect("最近选择的浅蓝写在正文上", xaml.Contains("FileBrowserItemTemplate", StringComparison.Ordinal) && browserStyle.Contains("IsLastChosen", StringComparison.Ordinal) && browserStyle.Contains(Spine.Utils.LastSidebarSelection.ColorHex, StringComparison.Ordinal) && browserStyle.Contains("PrimaryTextBrush", StringComparison.Ordinal));
 var browserCode = File.ReadAllText(FindUp("SpineViewer", "ViewModels", "Main", "FileBrowserViewModel.cs"));
 failed |= Expect("刷新列表时不把清空选择当成新标记", browserCode.Contains("SuppressLastChosen = true", StringComparison.Ordinal) && browserCode.Contains("Entries.Clear()", StringComparison.Ordinal));
 
@@ -167,7 +168,8 @@ failed |= Expect("下一次选择替换整批", replaced.Count == 1 && replaced[
 var kept = Spine.Utils.LastSidebarSelection.Replace(replaced, [], true);
 var ignored = Spine.Utils.LastSidebarSelection.Replace(replaced, [chosenDir], false);
 failed |= Expect("空选择和程序刷新不会丢掉最后一次标记", kept.Count == 1 && ignored.Count == 1 && ignored[0].EndsWith("hero.skel", StringComparison.OrdinalIgnoreCase));
-failed |= Expect("失焦时浅蓝，选中且列表有焦点时不改色", Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, false) && Spine.Utils.LastSidebarSelection.UseMarkColor(true, false, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(false, false, false));
+failed |= Expect("最近一次选择在选中和失焦时都保持浅蓝", Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, false) && Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, true) && Spine.Utils.LastSidebarSelection.UseMarkColor(true, false, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(false, false, false));
+failed |= Expect("文件栏文字样式基于暗色条目样式", File.ReadAllText(FindUp("SpineViewer", "Resources", "FileBrowserListStyles.xaml")).Contains("BasedOn=\"{StaticResource ListBoxItemBaseStyle}\"", StringComparison.Ordinal) && File.ReadAllText(FindUp("SpineViewer", "Resources", "FileBrowserListStyles.xaml")).Contains("PrimaryTextBrush", StringComparison.Ordinal));
 var oldState = """{ "Speed": 0.77, "VisitedDirectories": [ "D:\\\\models\\\\", "d:\\\\models" ], "RecentOpenedFiles": [ "D:\\\\models\\\\hero.skel" ] }""";
 failed |= Expect("旧访问历史不作为着色来源且其它字段还在", Spine.Utils.LastSidebarSelection.FromSavedState(oldState).Count == 0 && oldState.Contains("\"Speed\": 0.77", StringComparison.Ordinal));
 
@@ -182,11 +184,12 @@ failed |= Expect("切换动画会回到 Setup 再套用轨道", setBody.Contains
 failed |= Expect("拖动进度不重置槽位", !seekBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && seekBody.Contains("Update(0)", StringComparison.Ordinal));
 failed |= Expect("清掉一条轨道后重新套用其余轨道", clearBody.Contains("ClearTrack(index)", StringComparison.Ordinal) && clearBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && !clearBody.Contains("ClearTracks", StringComparison.Ordinal));
 var listVm = File.ReadAllText(FindUp("SpineViewer", "ViewModels", "Main", "SpineObjectListViewModel.cs"));
-var removeAt = listVm.IndexOf("private void RemoveSpineObject_Execute", StringComparison.Ordinal);
-var removeBody = removeAt >= 0 ? listVm.Substring(removeAt, Math.Min(700, listVm.Length - removeAt)) : "";
-failed |= Expect("移除模型只卸列表并释放对象", removeBody.Contains(".Remove(", StringComparison.Ordinal) && removeBody.Contains(".Dispose()", StringComparison.Ordinal) && !removeBody.Contains("File.Delete", StringComparison.Ordinal));
+var removeAt = listVm.IndexOf("private void RemoveModels", StringComparison.Ordinal);
+var removeBody = removeAt >= 0 ? listVm.Substring(removeAt, Math.Min(500, listVm.Length - removeAt)) : "";
+failed |= Expect("移除模型只卸列表并释放对象", listVm.Contains("public void RemoveOnly", StringComparison.Ordinal) && removeBody.Contains(".Remove(", StringComparison.Ordinal) && removeBody.Contains(".Dispose()", StringComparison.Ordinal) && !listVm.Contains("File.Delete", StringComparison.Ordinal));
 failed |= Expect("最近标记只由文件栏操作更新", windowCode.Contains("RememberFileBrowserChoice()", StringComparison.Ordinal) && !windowCode.Contains("FileBrowserList_SelectionChanged", StringComparison.Ordinal));
 failed |= Expect("模型列表有移除所选按钮", xaml.Contains("Str_RemoveSelectedModels", StringComparison.Ordinal) && xaml.Contains("Command=\"{Binding Cmd_RemoveSpineObject}\"", StringComparison.Ordinal));
+failed |= Expect("行内移除只卸这一条", xaml.Contains("RemoveOneModel_PreviewMouseLeftButtonDown", StringComparison.Ordinal) && windowCode.Contains("RemoveOnly(model)", StringComparison.Ordinal));
 var poseCode = File.ReadAllText(FindUp("Spine", "SpineObject.cs"));
 failed |= Expect("槽位重置后立刻套用当前轨道", poseCode.Contains("SetSlotsToSetupPose()", StringComparison.Ordinal) && poseCode.Contains("TrackMixCut.DetachOutgoing", StringComparison.Ordinal));
 var oldMix = new MixOutgoing();

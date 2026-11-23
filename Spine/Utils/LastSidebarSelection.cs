@@ -9,11 +9,11 @@ public static class LastSidebarSelection
     public const string ColorHex = "#8ECAFF";
 
     /// <summary>
-    /// 最近一次选择在未选中，或列表不再拥有焦点时，用浅蓝色标出。
-    /// 正在用鼠标选中时不改色，避免盖住选中文字。
+    /// 最近一次选择始终用浅蓝写在正文上，选中和失焦都不收回。
+    /// 选中时另有深色底，避免浅蓝字被选中样式盖住或变成黑字。
     /// </summary>
     public static bool UseMarkColor(bool isLastChosen, bool isSelected, bool listHasFocus)
-        => isLastChosen && (!isSelected || !listHasFocus);
+        => isLastChosen;
 
     public static string? Canonical(string? path)
     {

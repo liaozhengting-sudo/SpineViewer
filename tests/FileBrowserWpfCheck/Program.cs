@@ -90,7 +90,12 @@ public static class Program
             return 1;
         }
 
-        if (!ExerciseLastMarkAndRemove(region, text))
+        var stylePath = FindRepoFile("SpineViewer", "Resources", "FileBrowserListStyles.xaml");
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri(stylePath, UriKind.Absolute),
+        });
+        if (!ExerciseThemedFileList(app, region))
         {
             app.Shutdown();
             return 1;
@@ -101,51 +106,51 @@ public static class Program
         return 0;
     }
 
-    private static bool ExerciseLastMarkAndRemove(SolidColorBrush region, SolidColorBrush text)
+    private static string FindRepoFile(params string[] parts)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(new[] { dir.FullName }.Concat(parts).ToArray());
+            if (File.Exists(candidate))
+                return candidate;
+            dir = dir.Parent;
+        }
+        throw new FileNotFoundException(string.Join(Path.DirectorySeparatorChar, parts));
+    }
+
+    private static bool ExerciseThemedFileList(Application app, SolidColorBrush region)
     {
         var blue = (Color)ColorConverter.ConvertFromString("#8ECAFF");
         var rows = new ObservableCollection<MarkRow>
         {
-            new("40390_skin_Fracture03", true),
-            new("其它文件夹", false),
+            new("A-70130", true),
+            new("B-folder", false),
         };
         var files = new ListBox
         {
             ItemsSource = rows,
             SelectionMode = SelectionMode.Extended,
-            Width = 220,
-            Height = 80,
+            Width = 280,
+            Height = 90,
             Background = region,
-            Foreground = text,
-            ItemContainerStyle = MarkStyle(),
+            Foreground = (Brush)app.FindResource("PrimaryTextBrush"),
+            ItemContainerStyle = (Style)app.FindResource("FileBrowserItemStyle"),
+            ItemTemplate = (DataTemplate)app.FindResource("FileBrowserItemTemplate"),
         };
         var models = new ObservableCollection<string> { "40390_skin_Fracture03", "另一个" };
-        var modelList = new ListBox
-        {
-            ItemsSource = models,
-            SelectionMode = SelectionMode.Extended,
-            Width = 220,
-            Height = 60,
-        };
-        var settings = new Button { Content = "动画", Width = 80 };
-        var remove = new Button { Content = "移除所选模型", Width = 120 };
-        var asset = Path.Combine(Path.GetTempPath(), "sv-keep-" + Guid.NewGuid().ToString("N") + ".skel");
-        File.WriteAllText(asset, "asset");
-        remove.Click += (_, _) =>
-        {
-            foreach (var name in modelList.SelectedItems.Cast<string>().ToArray())
-                models.Remove(name);
-        };
+        var modelList = new ListBox { ItemsSource = models, SelectionMode = SelectionMode.Extended, Height = 50 };
+        var animation = new Button { Content = "动画", Width = 80 };
         var panel = new StackPanel();
         panel.Children.Add(files);
         panel.Children.Add(modelList);
-        panel.Children.Add(settings);
-        panel.Children.Add(remove);
+        panel.Children.Add(animation);
         var host = new Window
         {
             Content = panel,
-            Width = 260,
-            Height = 280,
+            Width = 320,
+            Height = 240,
+            Background = region,
             WindowStyle = WindowStyle.None,
             ShowInTaskbar = false,
             ShowActivated = true,
@@ -156,84 +161,117 @@ public static class Program
         files.UpdateLayout();
         host.UpdateLayout();
 
-        var mark = new List<string> { rows[0].Name };
-        static bool ShowBlue(bool chosen, bool selected, bool focused) => chosen && (!selected || !focused);
-        if (files.IsKeyboardFocusWithin && ShowBlue(true, true, true))
+        if (!ContrastOk(files, 0, blue, region.Color, "A focused last mark"))
         {
-            Console.Error.WriteLine("focused selection should keep its own readable color");
             host.Close();
-            File.Delete(asset);
+            return false;
+        }
+        if (!ContrastOk(files, 1, null, region.Color, "B normal light text"))
+        {
+            host.Close();
             return false;
         }
 
-        settings.Focus();
+        animation.Focus();
         modelList.SelectedIndex = 0;
         files.UpdateLayout();
         host.UpdateLayout();
-        if (mark.Count != 1 || mark[0] != rows[0].Name)
+        if (!ContrastOk(files, 0, blue, region.Color, "A still blue after other panels"))
         {
-            Console.Error.WriteLine("other controls replaced the file mark");
             host.Close();
-            File.Delete(asset);
-            return false;
-        }
-        if (files.IsKeyboardFocusWithin || !ShowBlue(true, files.SelectedIndex == 0, files.IsKeyboardFocusWithin))
-        {
-            Console.Error.WriteLine($"mark hidden after focus left files focus={files.IsKeyboardFocusWithin}");
-            host.Close();
-            File.Delete(asset);
             return false;
         }
 
-        var item = (ListBoxItem)files.ItemContainerGenerator.ContainerFromIndex(0);
-        var block = FindText(item);
-        if (item is null || block is null || item.Foreground is not SolidColorBrush brush || brush.Color != blue)
+        rows[0] = new MarkRow("A-70130", false);
+        rows[1] = new MarkRow("B-folder", true);
+        files.SelectedIndex = 1;
+        files.UpdateLayout();
+        host.UpdateLayout();
+        if (!ContrastOk(files, 1, blue, region.Color, "B becomes the only blue"))
         {
-            var got = item?.Foreground?.ToString() ?? "null";
-            Console.Error.WriteLine($"unfocused mark color {got}");
             host.Close();
-            File.Delete(asset);
+            return false;
+        }
+        if (!ContrastOk(files, 0, null, region.Color, "A returns to theme text"))
+        {
+            host.Close();
             return false;
         }
 
-        remove.IsEnabled = modelList.SelectedItems.Count > 0;
-        if (!remove.IsEnabled)
-        {
-            Console.Error.WriteLine("remove button stayed disabled with a selection");
-            host.Close();
-            File.Delete(asset);
-            return false;
-        }
-        remove.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        modelList.SelectedIndex = -1;
-        remove.IsEnabled = modelList.SelectedItems.Count > 0;
+        SaveShot(host, Path.Combine(AppContext.BaseDirectory, "file-list-contrast.png"));
         host.Close();
-        var kept = File.Exists(asset);
-        File.Delete(asset);
-        if (models.Count != 1 || models[0] != "另一个" || remove.IsEnabled || !kept)
-        {
-            Console.Error.WriteLine($"remove models={models.Count} enabled={remove.IsEnabled} file={kept}");
-            return false;
-        }
-        Console.WriteLine("ok wpf last mark stays after other focus and remove leaves the file");
+        Console.WriteLine("ok themed file list contrast");
         return true;
     }
 
-    private static Style MarkStyle()
+    private static bool ContrastOk(ListBox list, int index, Color? expect, Color page, string name)
     {
-        var style = new Style(typeof(ListBoxItem));
-        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
-        var unfocused = new MultiDataTrigger();
-        unfocused.Conditions.Add(new Condition(new Binding("IsLastChosen"), true));
-        unfocused.Conditions.Add(new Condition(new Binding("IsKeyboardFocusWithin") { RelativeSource = new RelativeSource(RelativeSourceMode.Self) }, false));
-        unfocused.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8ECAFF"))));
-        style.Triggers.Add(unfocused);
-        var notSelected = new MultiDataTrigger();
-        notSelected.Conditions.Add(new Condition(new Binding("IsLastChosen"), true));
-        notSelected.Conditions.Add(new Condition(new Binding("IsSelected") { RelativeSource = new RelativeSource(RelativeSourceMode.Self) }, false));
-        notSelected.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8ECAFF"))));
-        style.Triggers.Add(notSelected);
-        return style;
+        var item = list.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
+        var block = FindText(item);
+        if (item is null || block?.Foreground is not SolidColorBrush brush)
+        {
+            Console.Error.WriteLine($"{name}: missing text");
+            return false;
+        }
+        var bg = item.Background as SolidColorBrush;
+        var bgColor = bg?.Color ?? page;
+        var lum = Lum(brush.Color);
+        var contrast = Contrast(brush.Color, bgColor);
+        Console.WriteLine($"{name}: fg=#{brush.Color.R:X2}{brush.Color.G:X2}{brush.Color.B:X2} bg=#{bgColor.R:X2}{bgColor.G:X2}{bgColor.B:X2} contrast={contrast:0.00}");
+        if (brush.Color.R < 40 && brush.Color.G < 40 && brush.Color.B < 40)
+        {
+            Console.Error.WriteLine($"{name}: text is black");
+            return false;
+        }
+        if (contrast < 4.5)
+        {
+            Console.Error.WriteLine($"{name}: contrast too low");
+            return false;
+        }
+        if (expect is Color want && brush.Color != want)
+        {
+            Console.Error.WriteLine($"{name}: expected #{want.R:X2}{want.G:X2}{want.B:X2}");
+            return false;
+        }
+        if (expect is null && brush.Color == (Color)ColorConverter.ConvertFromString("#8ECAFF"))
+        {
+            Console.Error.WriteLine($"{name}: unexpected blue");
+            return false;
+        }
+        if (lum < 0.45)
+        {
+            Console.Error.WriteLine($"{name}: text too dark");
+            return false;
+        }
+        return true;
+    }
+
+    private static double Lum(Color c) => (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0;
+
+    private static double Contrast(Color a, Color b)
+    {
+        double Linear(double channel)
+        {
+            var s = channel / 255.0;
+            return s <= 0.03928 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
+        }
+        double L(Color c) => 0.2126 * Linear(c.R) + 0.7152 * Linear(c.G) + 0.0722 * Linear(c.B);
+        var hi = Math.Max(L(a), L(b));
+        var lo = Math.Min(L(a), L(b));
+        return (hi + 0.05) / (lo + 0.05);
+    }
+
+    private static void SaveShot(Window host, string path)
+    {
+        var width = Math.Max(1, (int)host.ActualWidth);
+        var height = Math.Max(1, (int)host.ActualHeight);
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(host);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
+        Console.WriteLine("screenshot " + path);
     }
 
     private static TextBlock? FindText(DependencyObject? node)

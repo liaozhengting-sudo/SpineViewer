@@ -744,6 +744,15 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void RemoveOneModel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // 先拦住，避免这次点击把多选收成这一行，再把整批选中一起卸掉。
+        e.Handled = true;
+        if (sender is not FrameworkElement element || element.DataContext is not SpineObjectModel model)
+            return;
+        _vm.SpineObjectListViewModel.RemoveOnly(model);
+    }
+
     private void RememberFileBrowserChoice()
     {
         if (_vm.FileBrowserViewModel.SuppressLastChosen)
