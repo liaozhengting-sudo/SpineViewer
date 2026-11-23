@@ -46,6 +46,8 @@
     <s:String x:Key="Str_AddSpineObjectFromClipboard">Add from Clipboard</s:String>
     <s:String x:Key="Str_AddSpineObjectsTitle">Batch Add Spine Files</s:String>
     <s:String x:Key="Str_RemoveSpineObject">Remove</s:String>
+    <s:String x:Key="Str_RemoveSelectedModels">Remove selected models</s:String>
+    <s:String x:Key="Str_RemoveSelectedModelsTooltip">Removes the selected models from the preview and the list. Files on disk are not deleted. Ctrl or Shift selects more than one.</s:String>
     <s:String x:Key="Str_RemoveAllSpineObject">Remove All</s:String>
     <s:String x:Key="Str_Reload">Reload</s:String>
     <s:String x:Key="Str_ReloadSpineObjectsTitle">Reload Spine Files</s:String>

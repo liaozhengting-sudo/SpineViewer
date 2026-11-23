@@ -744,12 +744,19 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void FileBrowserList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void RememberFileBrowserChoice()
     {
         if (_vm.FileBrowserViewModel.SuppressLastChosen)
             return;
         var paths = _fileBrowserList.SelectedItems.Cast<FileBrowserEntry>().Select(entry => entry.FullPath).ToArray();
         _vm.FileBrowserViewModel.ReplaceLastChosen(paths, fromUser: true);
+    }
+
+    private void FileBrowserList_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Up or Key.Down or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.Space))
+            return;
+        RememberFileBrowserChoice();
     }
 
     private void FileBrowserList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -786,6 +793,8 @@ public partial class MainWindow : Window
             return;
         }
 
+        var clickedItem = ((DependencyObject)e.OriginalSource)?.GetParent<ListBoxItem>(true) is not null
+            || _fileBrowserDragEntry is not null;
         if (_fileBrowserHoldSelection && _fileBrowserDragEntry is not null)
         {
             _fileBrowserList.SelectedItems.Clear();
@@ -793,6 +802,8 @@ public partial class MainWindow : Window
         }
         _fileBrowserHoldSelection = false;
         _fileBrowserDragEntry = null;
+        if (clickedItem)
+            RememberFileBrowserChoice();
     }
 
     private void FileBrowserList_MouseMove(object sender, MouseEventArgs e)
@@ -813,6 +824,7 @@ public partial class MainWindow : Window
 
         _fileBrowserDragEntry = null;
         _fileBrowserDragStarted = true;
+        RememberFileBrowserChoice();
         DragDrop.DoDragDrop(_fileBrowserList, new DataObject(DataFormats.FileDrop, paths), DragDropEffects.Copy);
     }
 

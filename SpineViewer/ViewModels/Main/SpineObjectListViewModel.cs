@@ -109,6 +109,7 @@ namespace SpineViewer.ViewModels.Main
                 foreach (var it in selectedItems) it.IsSelected = true;
                 _vmMain.SpineObjectTabViewModel.SelectedObjects = selectedItems;
             }
+            Cmd_RemoveSpineObject.NotifyCanExecuteChanged();
         }
 
         /// <summary>

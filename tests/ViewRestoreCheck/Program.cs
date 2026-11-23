@@ -181,6 +181,12 @@ var clearBody = clearAt >= 0 ? modelCode.Substring(clearAt, Math.Min(500, modelC
 failed |= Expect("切换动画会回到 Setup 再套用轨道", setBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && !setBody.Contains("ClearTracks", StringComparison.Ordinal) && !setBody.Contains("SpineVersion.V34", StringComparison.Ordinal));
 failed |= Expect("拖动进度不重置槽位", !seekBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && seekBody.Contains("Update(0)", StringComparison.Ordinal));
 failed |= Expect("清掉一条轨道后重新套用其余轨道", clearBody.Contains("ClearTrack(index)", StringComparison.Ordinal) && clearBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && !clearBody.Contains("ClearTracks", StringComparison.Ordinal));
+var listVm = File.ReadAllText(FindUp("SpineViewer", "ViewModels", "Main", "SpineObjectListViewModel.cs"));
+var removeAt = listVm.IndexOf("private void RemoveSpineObject_Execute", StringComparison.Ordinal);
+var removeBody = removeAt >= 0 ? listVm.Substring(removeAt, Math.Min(700, listVm.Length - removeAt)) : "";
+failed |= Expect("移除模型只卸列表并释放对象", removeBody.Contains(".Remove(", StringComparison.Ordinal) && removeBody.Contains(".Dispose()", StringComparison.Ordinal) && !removeBody.Contains("File.Delete", StringComparison.Ordinal));
+failed |= Expect("最近标记只由文件栏操作更新", windowCode.Contains("RememberFileBrowserChoice()", StringComparison.Ordinal) && !windowCode.Contains("FileBrowserList_SelectionChanged", StringComparison.Ordinal));
+failed |= Expect("模型列表有移除所选按钮", xaml.Contains("Str_RemoveSelectedModels", StringComparison.Ordinal) && xaml.Contains("Command=\"{Binding Cmd_RemoveSpineObject}\"", StringComparison.Ordinal));
 var poseCode = File.ReadAllText(FindUp("Spine", "SpineObject.cs"));
 failed |= Expect("槽位重置后立刻套用当前轨道", poseCode.Contains("SetSlotsToSetupPose()", StringComparison.Ordinal) && poseCode.Contains("TrackMixCut.DetachOutgoing", StringComparison.Ordinal));
 var oldMix = new MixOutgoing();

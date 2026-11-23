@@ -46,6 +46,8 @@
     <s:String x:Key="Str_AddSpineObjectFromClipboard">从剪贴板添加</s:String>
     <s:String x:Key="Str_AddSpineObjectsTitle">批量添加骨骼文件</s:String>
     <s:String x:Key="Str_RemoveSpineObject">移除</s:String>
+    <s:String x:Key="Str_RemoveSelectedModels">移除所选模型</s:String>
+    <s:String x:Key="Str_RemoveSelectedModelsTooltip">从预览和左侧列表移除选中的模型，不删除磁盘上的文件。可按住 Ctrl 或 Shift 多选。</s:String>
     <s:String x:Key="Str_RemoveAllSpineObject">移除全部</s:String>
     <s:String x:Key="Str_Reload">重新加载</s:String>
     <s:String x:Key="Str_ReloadSpineObjectsTitle">重新加载骨骼文件</s:String>
