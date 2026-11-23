@@ -1,0 +1,45 @@
+name: Build Windows self-contained
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/preview-checkerboard-de7a
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Listing and view checks
+        run: dotnet run --project tests/ViewRestoreCheck/ViewRestoreCheck.csproj -c Release --nologo
+
+      - name: WPF dark theme and list check
+        run: dotnet run --project tests/FileBrowserWpfCheck/FileBrowserWpfCheck.csproj -c Release --nologo
+
+      - name: Publish self-contained win-x64
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content "SpineViewer\SpineViewer.csproj")).SelectSingleNode("//Version").InnerText.Trim()
+          $out = "publish\SpineViewer-v$version-SelfContained"
+          dotnet publish "SpineViewer\SpineViewer.csproj" -c Release -r win-x64 --self-contained true -o $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish "SpineViewerCLI\SpineViewerCLI.csproj" -c Release -r win-x64 --self-contained true -o $out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem publish -Recurse -Filter *.pdb | Remove-Item -Force
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          Compress-Archive -Path "$out\*" -DestinationPath "release\SpineViewer-v$version-SelfContained.zip" -Force
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpineViewer-v0.16.48-SelfContained
+          path: release/*.zip
+          if-no-files-found: error

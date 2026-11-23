@@ -170,6 +170,24 @@ failed |= Expect("空选择和程序刷新不会丢掉最后一次标记", kept.
 failed |= Expect("失焦时浅蓝，选中且列表有焦点时不改色", Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, false) && Spine.Utils.LastSidebarSelection.UseMarkColor(true, false, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(true, true, true) && !Spine.Utils.LastSidebarSelection.UseMarkColor(false, false, false));
 var oldState = """{ "Speed": 0.77, "VisitedDirectories": [ "D:\\\\models\\\\", "d:\\\\models" ], "RecentOpenedFiles": [ "D:\\\\models\\\\hero.skel" ] }""";
 failed |= Expect("旧访问历史不作为着色来源且其它字段还在", Spine.Utils.LastSidebarSelection.FromSavedState(oldState).Count == 0 && oldState.Contains("\"Speed\": 0.77", StringComparison.Ordinal));
+
+var modelCode = File.ReadAllText(FindUp("SpineViewer", "Models", "SpineObjectModel.cs"));
+var setAt = modelCode.IndexOf("public void SetAnimation", StringComparison.Ordinal);
+var seekAt = modelCode.IndexOf("public void SeekTrack", StringComparison.Ordinal);
+var clearAt = modelCode.IndexOf("public void ClearTrack", StringComparison.Ordinal);
+var setBody = setAt >= 0 && seekAt > setAt ? modelCode.Substring(setAt, seekAt - setAt) : "";
+var seekBody = seekAt >= 0 && clearAt > seekAt ? modelCode.Substring(seekAt, clearAt - seekAt) : "";
+var clearBody = clearAt >= 0 ? modelCode.Substring(clearAt, Math.Min(500, modelCode.Length - clearAt)) : "";
+failed |= Expect("切换动画会回到 Setup 再套用轨道", setBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && !setBody.Contains("ClearTracks", StringComparison.Ordinal) && !setBody.Contains("SpineVersion.V34", StringComparison.Ordinal));
+failed |= Expect("拖动进度不重置槽位", !seekBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && seekBody.Contains("Update(0)", StringComparison.Ordinal));
+failed |= Expect("清掉一条轨道后重新套用其余轨道", clearBody.Contains("ClearTrack(index)", StringComparison.Ordinal) && clearBody.Contains("ReleaseUnkeyedSlotPose", StringComparison.Ordinal) && !clearBody.Contains("ClearTracks", StringComparison.Ordinal));
+var poseCode = File.ReadAllText(FindUp("Spine", "SpineObject.cs"));
+failed |= Expect("槽位重置后立刻套用当前轨道", poseCode.Contains("SetSlotsToSetupPose()", StringComparison.Ordinal) && poseCode.Contains("TrackMixCut.DetachOutgoing", StringComparison.Ordinal));
+var oldMix = new MixOutgoing();
+var outgoing = new MixOutgoing { previous = oldMix, mixingFrom = oldMix };
+var current = new MixCurrent { Inner = outgoing };
+Spine.Utils.TrackMixCut.DetachOutgoing(current);
+failed |= Expect("切换时切断上一个动画的混合", outgoing.previous is null && outgoing.mixingFrom is null);
 }
 finally
 {
@@ -198,4 +216,16 @@ static bool Expect(string name, bool ok)
 {
     Console.WriteLine(ok ? $"ok  {name}" : $"FAIL {name}");
     return !ok;
+}
+
+file sealed class MixOutgoing
+{
+    internal MixOutgoing? previous;
+    internal MixOutgoing? mixingFrom;
+}
+
+file sealed class MixCurrent
+{
+    public MixOutgoing Inner { get; set; } = new();
+    public object InnerObject => Inner;
 }

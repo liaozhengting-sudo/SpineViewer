@@ -27,13 +27,11 @@ namespace SpineViewer.Extensions
                     t.TrackTime = tr.TrackTime;
             }
 
-            // XXX(#105): 部分 3.4.02 版本模型在设置动画后出现附件残留, 因此强制进行一次 Setup
-            if (spineObject.Version == SpineVersion.V34)
+            foreach (var tr in spineObject.AnimationState.IterTracks())
             {
-                spineObject.Skeleton.SetSlotsToSetupPose();
+                if (tr is not null)
+                    spineObject.ReleaseUnkeyedSlotPose(tr);
             }
-
-            spineObject.Update(0);
             return spineObject;
         }
 

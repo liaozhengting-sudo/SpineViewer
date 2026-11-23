@@ -253,12 +253,8 @@ namespace SpineViewer.Models
                     entry = _spineObject.AnimationState.SetAnimation(index, name, true);
                     entry.TimeScale = lastTimeScale;
                     entry.Alpha = lastAlpha;
-
-                    // XXX(#105): 部分 3.4.02 版本模型在设置动画后出现附件残留, 因此强制进行一次 Setup
-                    if (_spineObject.Version == SpineVersion.V34)
-                    {
-                        _spineObject.Skeleton.SetSlotsToSetupPose();
-                    }
+                    // 新动画没打关键帧的槽位回到 Setup，其它轨道会在这一次里重新套上。
+                    _spineObject.ReleaseUnkeyedSlotPose(entry);
                 }
             }
         }
@@ -370,7 +366,11 @@ namespace SpineViewer.Models
 
         public void ClearTrack(int index)
         {
-            lock (_lock) _spineObject.AnimationState.ClearTrack(index);
+            lock (_lock)
+            {
+                _spineObject.AnimationState.ClearTrack(index);
+                _spineObject.ReleaseUnkeyedSlotPose(null);
+            }
         }
 
         public void ResetAnimationsTime()
@@ -581,11 +581,7 @@ namespace SpineViewer.Models
                         trackIndex++;
                     }
 
-                    // XXX(#105): 部分 3.4.02 版本模型在设置动画后出现附件残留, 因此强制进行一次 Setup
-                    if (_spineObject.Version == SpineVersion.V34)
-                    {
-                        _spineObject.Skeleton.SetSlotsToSetupPose();
-                    }
+                    _spineObject.ReleaseUnkeyedSlotPose(null);
 
                     SetProperty(_spineObject.DebugTexture, m.DebugTexture, v => _spineObject.DebugTexture = v, nameof(DebugTexture));
                     SetProperty(_spineObject.DebugBounds, m.DebugBounds, v => _spineObject.DebugBounds = v, nameof(DebugBounds));

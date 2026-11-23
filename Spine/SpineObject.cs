@@ -385,6 +385,21 @@ namespace Spine
         }
 
         /// <summary>
+        /// 换掉或清掉某一条轨道后，让没被当前轨道打关键帧的槽位回到 Setup，再立刻套用剩下的轨道。
+        /// 不清除其它轨道，也不每帧重置。
+        /// </summary>
+        public void ReleaseUnkeyedSlotPose(ITrackEntry? replaced)
+        {
+            if (replaced is not null)
+            {
+                replaced.MixDuration = 0;
+                TrackMixCut.DetachOutgoing(replaced);
+            }
+            _skeleton.SetSlotsToSetupPose();
+            Update(0);
+        }
+
+        /// <summary>
         /// 更新状态, 按顺序调用动画状态更新并应用到骨骼上更新
         /// </summary>
         public void Update(float delta)
